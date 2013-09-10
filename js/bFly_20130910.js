@@ -1,1 +1,765 @@
-(function(e){var t,n,r=new Image,i="start",s,o,u=8,a=4,f=[3,7],l,c,h,p,d,v,m=[],g=[0,0],y=!1;for(var b=0,w="";b!=256;b++)m[b]=!1;var E=function(){s==undefined&&(s={}),s.x=225,s.y=225,s.dx=0,s.dy=0,s.score=0,s.nectar=250,s.maxNectar=1500,s.luck=[75,100],s.ani={cell:0,rate:300,last:new Date},s.highScore||(s.highScore=0),o=[],l=[],c=100,d=new Date,h=new Date,p=1e3,score=0,v=!1};E();var S=function(e,t,r){if(!r)var r=!1;if(!e||!t)var e=250,t=60;if(r)var i=1.25,o=1.75,u=.3;else var i=tb.per(s.nectar,s.maxNectar)/100+1,o=c/100+1,a=new Date,u=tb.per(a-d,3e4)/100;var f=n;f.fillStyle="rgba(128,128,128,0.5)",f.strokeStyle="rgba(0,0,0,1)",f.lineWidth=2,f.beginPath(),f.arc(e,t,50,Math.PI,Math.PI*2),f.arc(e,t,30,Math.PI*2,Math.PI,!0),f.closePath(),f.stroke(),f.fill(),f.beginPath(),f.arc(e,t,25,Math.PI,Math.PI*2),f.arc(e,t,10,Math.PI*2,Math.PI,!0),f.closePath(),f.stroke(),f.fill(),f.beginPath(),f.arc(e,t+5,25,Math.PI*2,Math.PI),f.arc(e,t+5,10,Math.PI,Math.PI*2,!0),f.closePath(),f.stroke(),f.fill(),f.fillStyle="rgba(255,0,128,0.75)",f.beginPath(),f.arc(e,t,50,Math.PI,Math.PI*i),f.arc(e,t,30,Math.PI*i,Math.PI,!0),f.closePath(),f.stroke(),f.fill(),f.fillStyle="rgba(0,192,0,0.75)",f.beginPath(),f.arc(e,t,25,Math.PI,Math.PI*o),f.arc(e,t,10,Math.PI*o,Math.PI,!0),f.closePath(),f.stroke(),f.fill(),f.fillStyle="rgba(0,255,128,0.75)",f.beginPath(),f.arc(e,t+5,25,Math.PI,Math.PI-Math.PI*u,!0),f.arc(e,t+5,10,Math.PI-Math.PI*u,Math.PI,!1),f.closePath(),f.stroke(),f.fill();if(!r){f.strokeStyle="#000000",f.fillStyle="#ffffff",f.font="15px courier",f.textAlign="center";var l=tb.formatNumber(s.score);f.strokeText("score: "+l,100,20),f.fillText("score: "+l,100,20)}},x=function(){this.x=tb.rndInt(380)+60,this.y=tb.rndInt(280)+110,this.nectar=tb.rndInt(50+c,c*4.4+60),this.flowerSize=this.nectar*.05,this.grown=!1,this.growState=0,this.stemColor="rgb(0,"+Math.round(tb.rnd(127)+127)+",0)",this.x<=250?this.stemXRate=tb.rnd(this.x)/25/25:this.stemXRate=tb.rnd(480-this.x)/25/25,this.pettleHue=Math.round(tb.rnd(360)),this.pettleLightness=c,this.offset=tb.rnd(3.14),this.pettleCount=Math.round(tb.rnd(f[0],f[1]))},T=function(e,t){var r=o[t];n.strokeStyle=r.stemColor,n.save(),n.lineWidth=5,r.nectar<25?n.globalAlpha=tb.per(r.nectar,25)/100:n.globalAlpha=1,n.beginPath(),n.moveTo(r.x+r.flowerSize,500);for(var i=0;i!=e+1;i++){var s=(500-r.y-r.flowerSize)/50;if(i<=24)var u=i;else var u=50-i;if(r.x<=250)var f=r.x+r.flowerSize-u*r.stemXRate*i;else var f=r.x+r.flowerSize+u*r.stemXRate*i;var l=500-i*s;n.lineTo(f,l)}n.stroke();var c="rgb("+Math.round(r.nectar)+","+Math.round(r.nectar)+",0)",h="#ffffff",h="hsl("+r.pettleHue*30+","+Math.round(tb.per(r.nectar,500))+"%,"+r.pettleLightness+"%)";e==50?N(r.x+r.flowerSize,r.y+r.flowerSize,r.flowerSize*3,r.pettleCount,c,h,r.offset,a):N(f,l,r.flowerSize*3*(e/50),r.pettleCount,c,h,r.offset,a),n.restore()},N=function(e,t,r,i,s,o,u,a){if(u==undefined)var u=tb.rnd(0,3.14);n.beginPath(),n.lineWidth=2,n.moveTo(e,t);var f=i*2;if(!a)var a=4;var l=f*a,c=Math.PI*2/l,h=l/i,p=r/3;r=r*2/h;var d=!0;for(var v=u,m=0;v<Math.PI*2+u;v+=c)n.lineTo(e+Math.sin(v)*m*r,t+Math.cos(v)*m*r),d?m+=1:m-=1,m>=h/2&&(d=!d),m<=0&&(d=!d);n.closePath(),n.strokeStyle="#000000",n.stroke(),n.fillStyle=o,n.fill(),n.strokeStyle="#000000",n.beginPath(),n.arc(e,t,p,0,6.28),n.closePath(),n.stroke(),n.fillStyle=s,n.fill()},C=function(){var e=n.createLinearGradient(0,500,0,0);e.addColorStop(0,"#00ff80"),e.addColorStop(.75,"#0000ff"),n.fillStyle=e,n.fillRect(0,0,500,500)},k={firstTime:!0,start:function(){k.firstTime&&(t=tb.g("game"),n=t.getContext("2d"),n.textBaseline="top",r.src="img/fly_32_1.png",r.onload=function(){M(),i="menu"},tb.getIt()!=undefined&&(s.highScore=tb.getIt()),k.firstTime=!1,O())},maxMenuFlowers:10,menuFlowers:[],menuFlowerRadian:0,menuMessage:tb.breakToLines("Use the W,A,D keys, or touch screen, to move Mr BtterFly. Try your best to keep your nectar bar from fully depleting, by gathering Nectar from flowers. As time goes by your luck will change. ",12,400),menu:function(){if(k.menuFlowers.length<k.maxMenuFlowers){var e=k.menuFlowers.length;k.menuFlowers[e]={};var t=k.menuFlowers[e];t.size=tb.rnd(75)+25,t.x=Math.round(tb.rnd(t.size/2,500-t.size/2)),t.y=Math.round(tb.rnd(t.size/2,500-t.size/2)),t.pettleColor="hsl("+Math.round(tb.rnd(360))+",100%,"+Math.round(tb.rnd(50,100))+"%)",t.offset=tb.rnd(3.14),t.pettleCount=Math.round(tb.rnd(f[0],f[1]))}k.menuFlowers.length==k.maxMenuFlowers&&(y||m[32])&&(tb.boundingBox(g[0],g[1],1,1,100,200,300,50)||m[32])&&(k.menuFlowers=[],E(),i="game")},game:function(){m[87]?(s.dy>-5&&(s.dy-=.25),s.nectar-=.5,new Date-s.ani.last>=s.ani.rate*.25&&(s.ani.cell++,s.ani.last=new Date,s.ani.cell==2&&(s.ani.cell=0))):s.dy<5&&(s.dy+=.25),m[65]||m[68]?(s.nectar-=.5,m[65]&&s.dx>-5&&(s.dx-=.25),m[68]&&s.dx<5&&(s.dx+=.25)):(s.dx>0&&(s.dx-=.25),s.dx<0&&(s.dx+=.25)),s.x+=s.dx,s.y+=s.dy,s.x<0&&(s.x=0),s.x>450&&(s.x=450),s.y>450&&(s.y=450),s.y<0&&(s.y=0);if(new Date-h>=p){h=new Date;if(o.length<u){var e=tb.rnd(100);if(e<=c){var t=o.length;o[t]=new x(t)}}}for(var n=0;n!=o.length;n++){var t=o[n];t.grown?(tb.boundingBox(s.x,s.y+30,20,20,t.x,t.y,t.flowerSize*2,t.flowerSize*2)?(t.nectar>=20?(s.nectar+=2,t.nectar-=20,s.score+=20):(s.nectar+=t.nectar,s.score+=Math.floor(t.nectar),t.nectar=0),s.nectar>s.maxNectar&&(s.nectar=s.maxNectar)):(t.nectar-=.25,t.nectar<25&&t.y<480&&t.y++),t.nectar<0&&(t.nectar=0)):t.growState<50?t.growState++:t.grown=!0,t.nectar<=0&&(l[l.length]=n)}if(l.length>0){for(var r=l.length-1;r!=-1;r--)o.splice(l[r],1);l=[],h=new Date}new Date-d>=3e4&&(c=Math.round(tb.rnd(s.luck[1]-s.luck[0]))+s.luck[0],s.luck[0]>10&&(s.luck[0]-=5,s.luck[1]-=5),d=new Date),new Date-s.ani.last>=s.ani.rate&&(s.ani.cell++,s.ani.last=new Date,s.ani.cell==2&&(s.ani.cell=0));if(s.y==450||s.nectar<=0)s.nectar=0,i="lostGame"},lostGame:function(){s.score>s.highScore&&(s.highScore=s.score,tb.parkIt(s.highScore));if(m[32]||y)E(),i="menu"}},L={start:function(){C(),n.fillText("I am loading...",10,10)},menu:function(){C();for(var e=0;e!=k.menuFlowers.length;e++){k.menuFlowers[e];var t=k.menuFlowers[e];N(t.x,t.y,t.size,t.pettleCount,"#ffff00",t.pettleColor,t.offset,a)}n.fillStyle="rgba(0,0,0,0.75)";if(e!=k.maxMenuFlowers){var r=Math.round(tb.per(e,k.maxMenuFlowers)*4),i=Math.round(r/2);n.fillRect(250-i,250-i,r,r)}else n.strokeStyle="#ffffff",n.fillRect(50,50,400,400),n.lineWidth=4,n.strokeRect(50,50,400,400),n.fillStyle="#ff0000",n.fillRect(100,200,300,50),n.strokeRect(100,200,300,50),n.fillStyle="#ffffff",n.font="80px arial",n.textAlign="center",n.fillText("bFly",250,70),n.font="40px arial",n.fillText("new game",250,200),n.font="15px arial",n.fillText("How to Play:",250,260),S(150,350,!0),n.strokeStyle="#ffffff",n.font="12px courier",n.beginPath(),n.moveTo(115,330),n.lineTo(100,300),n.closePath(),n.stroke(),n.beginPath(),n.moveTo(150,335),n.lineTo(150,290),n.closePath(),n.stroke(),n.beginPath(),n.moveTo(135,365),n.lineTo(160,400),n.closePath(),n.stroke(),n.fillStyle="#ffffff",n.fillText("Nectar",100,288),n.fillText("Luck",150,278),n.fillText("Time to luck change",160,400),tb.printStringArrayToContext(k.menuMessage,n,12,325,300),n.fillText("High Score: "+tb.formatNumber(s.highScore),250,170),tb.boundingBox(g[0],g[1],1,1,100,200,300,50)&&(N(100,200,40,7,"#ffff00","#ffffff",k.menuFlowerRadian,2),k.menuFlowerRadian+=.05,k.menuFlowerRadian>=Math.PI*2&&(k.menuFlowerRadian-=Math.PI*2))},game:function(){C();for(var e=0;e!=o.length;e++){var t=o[e];T(t.growState,e)}n.drawImage(r,s.ani.cell*16,0,16,15,s.x,s.y,50,50),S()},lostGame:function(){if(!v){n.fillStyle="rgba(0,0,0,0.8)",n.strokeStyle="#ffffff",n.lineWidth=4,n.fillRect(125,125,250,250),n.strokeRect(125,125,250,250),n.fillStyle="#ffffff",n.font="40px arial";var e="game over";n.textAlign="center",n.fillText(e,250,125);var e=tb.breakToLines("Oh no it looks as though mr butterFly could not keep up with its futial strugle, how sad.",7,250),t=tb.printStringArrayToContext(e,n,15,250,180);n.fillText("your score: "+tb.formatNumber(s.score),250,t),n.fillText("click or press to continue",250,t+40),v=!0}}},A=function(){var e=new Date,t=function(){new Date-e>=50&&(k[i](),L[i](),e=new Date),requestAnimFrame(t)};t()},O=function(){t.style.top="25px",t.style.left=Math.round(window.innerWidth/2-250)+"px"};e.addEventListener("load",function(e){tb.checkCanvas()?A():document.write("your browser does not seem to support canvas, sorry.")}),e.addEventListener("resize",function(e){t!=undefined&&O()}),e.addEventListener("keydown",function(e){e.keyCode==32&&e.preventDefault(),m[e.keyCode]=!0}),e.addEventListener("keyup",function(e){m[e.keyCode]=!1});var M=function(){t.addEventListener("mousemove",function(e){g[0]=e.clientX-t.offsetLeft,g[1]=e.clientY-t.offsetTop}),t.addEventListener("mousedown",function(e){y=!0}),t.addEventListener("mouseup",function(e){y=!1}),t.addEventListener("touchstart",function(e){e.preventDefault(),y=!0,m[32]=!1,m[87]=!1,m[65]=!1,m[68]=!1}),t.addEventListener("touchend",function(e){e.preventDefault(),y=!1,g[0]=-1,g[1]=-1,m[32]=!1,m[87]=!1,m[65]=!1,m[68]=!1}),t.addEventListener("touchmove",function(e){e.preventDefault(),m[32]=!1,m[87]=!1,m[65]=!1,m[68]=!1,i!="game"&&(m[32]=!0);var n=e.touches[0];g[0]=n.clientX-t.offsetLeft,g[1]=n.clientY-t.offsetTop,g[1]<s.y&&(m[87]=!0),g[0]>s.x&&(m[68]=!0),g[0]<s.x&&(m[65]=!0)})}})(window)
+/* begin the app*/
+(function (global) { // beginning of bFly 13k game object
+
+    /* all variables that should be shared across functions place here*/
+    var conDom, // stores a reference to the canvas DOM objct
+        con, // stores a reference to the canvas context
+        sheet = new Image(), // the games one sprite sheet.
+        currentState = 'start', // current state in the games state machine
+        fly, // the fly object stores data of the players fly such as x,y, deltaX, deltaY, ect.
+        flowers, // the flowers array, stores and array of objects made by the flower constructor 
+
+        /* graphics and performance! */
+        maxFlowers = 8, // maximum flowers allowed, should be kept low to conserve overhead.	
+        flowerSmoothness = 4, // range is form 2 (jagged flowers but less overhead) upwards, higher numbers give smoother flowers, but costs CPU overhead.
+        pettleRange = [3, 7], // the pettle range is the range of pettles that a flower will have, lower range will give better performance
+
+        killList, // list of flowers to be removed from the flowers array.
+        luck, // the fly (players) current luck that has a potential range from 0 to 100.
+        lastRoll, // stores a date object that represents the last time a roll for a new flower has occurred, if roll is <= luck then a new flower will bloom.
+        rollDelay, // rollDelay is the amount of time that should pass between rolls, it should be set to a fixed value such as 1000, or perhaps change dynamicly based on luck
+        lastLuckChange, // like lastRoll stores a Date object that is the last time the fly's luck has change
+        // FPS = 0,  // Frames Per Second (FPS counter)
+        //FC = 0, // Frame Count (FPS counter)
+        //lastFrameCount = new Date(), // last frame count (FPS counter)
+        gameOver, // game over boolean
+        //gameTimeStart,
+        keys = [], // used to store key state boolean values
+        pointer = [0, 0], // mouse/touch pointer
+        pressed = false; // used with mouse/touch events
+
+    for (var k = 0, str = ''; k != 256; k++) { // set all key states to false
+        keys[k] = !1;
+    };
+
+    var newGame = function () { // new game function sets up a new game
+        if (fly == undefined) {
+            fly = {}
+        }; // set up the fly (player) object
+        fly.x = 225, // set x, and y pos to the center of the screen
+        fly.y = 225,
+        fly.dx = 0, // start delta x, and y out at 0
+        fly.dy = 0,
+        fly.score = 0, // set score to 0
+        //fly.level: 1,  // level properties not yet in use, may be removed
+        fly.nectar = 250, // starting nectar
+        fly.maxNectar = 1500, // the maximum nectar that the fly can hold.
+        fly.luck = [75, 100], // the flys luck range, in a new game the fly starts out with good luck, then it should slowly get harder
+        fly.ani = { // fly.ani object has to do with fly animation
+            cell: 0, // current cell
+            rate: 300, // cell rate
+            last: new Date() // last cell flip
+        };
+        if (!fly.highScore) fly.highScore = 0; // if there is no highScore set it to 0
+        flowers = [], killList = []; // set flowers array, and flowers killList to and empty array
+        // maxFlowers = 10; 
+        //t = null;
+        luck = 100, // always start out the game with great luck
+        lastLuckChange = new Date(); // and make note of the last time the luck has been set
+        lastRoll = new Date(); // a flower roll has not yet been made, but make a note of the time so the first roll happens when flower roll delay has been reached 
+        rollDelay = 1000; // witch we shale set at a fixed rate of 1000 for now.
+        score = 0;
+        //gameTimeStart=new Date();
+        gameOver = !1; // set the game over boolean to false
+    };
+    newGame(); // set up a new Game, just to init the fly object
+
+    /*  
+	     disp render display function 
+		 this function will be used to display information to the player
+	
+	*/
+    var disp = function (dispX, dispY, demo) {
+        if (!demo) var demo = false;
+        if (!dispX || !dispY) {
+            var dispX = 250,
+                dispY = 60; // position of display
+        };
+        /* 
+		 dispX sets the position of the nectar, and luck indicator bars
+		 dispX and dispY are the position of the concentric circles orgin
+         so then 50,50 would place it in the upper left corner
+         250,50 would be in the upper upper center.	 
+		 */
+        if (demo) {
+            var necBar = 1.25,
+                luckBar = 1.75,
+                changeTime = 0.30;
+        } else {
+            var necBar = tb.per(fly.nectar, fly.maxNectar) / 100 + 1, // determin the nectar bar length
+                luckBar = luck / 100 + 1, // find luck bar length
+                now = new Date(),
+                changeTime = tb.per(now - lastLuckChange, 30000) / 100;
+        };
+
+        var c = con; // reference to context
+
+        c.fillStyle = 'rgba(128,128,128,0.5)'; // set background color
+        c.strokeStyle = 'rgba(0,0,0,1)'; // set bar outline color
+        c.lineWidth = 2; // thicker then normal outline width
+
+        // draw nectar bar and luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 30, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill nectar bar background
+
+        // draw luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 10, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck bar background
+
+        // draw luck change bar background
+        c.beginPath();
+        c.arc(dispX, dispY + 5, 25, Math.PI * 2, Math.PI);
+        c.arc(dispX, dispY + 5, 10, Math.PI, Math.PI * 2, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck change bar background
+
+        // draw nectar bar
+        c.fillStyle = 'rgba(255,0,128,0.75)'; // the nectar bar color
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * necBar);
+        c.arc(dispX, dispY, 30, Math.PI * necBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+
+        // draw luck bar
+        c.fillStyle = 'rgba(0,192,0,0.75)'; // luck bar color, why not green?
+
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * luckBar);
+        c.arc(dispX, dispY, 10, Math.PI * luckBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+
+        // draw luck change bar 
+
+
+        c.fillStyle = 'rgba(0,255,128,0.75)'; // luck change change color
+        c.beginPath();
+        c.arc(dispX, dispY + 5, 25, Math.PI, Math.PI - Math.PI * changeTime, true);
+        c.arc(dispX, dispY + 5, 10, Math.PI - Math.PI * changeTime, Math.PI, false);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck change bar 
+
+        // draw score
+        if (!demo) {
+            c.strokeStyle = '#000000';
+            c.fillStyle = '#ffffff';
+            c.font = '15px courier';
+            c.textAlign = 'center';
+            var text = tb.formatNumber(fly.score);
+            c.strokeText('score: ' + text, 100, 20);
+            c.fillText('score: ' + text, 100, 20);
+        }
+    };
+
+
+    var flower = function () { // the flower constructer function
+        this.x = tb.rndInt(380) + 60; // the x position of the flower
+        this.y = tb.rndInt(280) + 110; // the y position of the flower
+        this.nectar = tb.rndInt(50 + luck, luck * 4.4 + 60); // the amount of nectar that the flower has
+        this.flowerSize = this.nectar * 0.05; // the flower size is based on the amount of nectar
+
+        this.grown = !1; // grown boolean set to false, this is used in the drawStem rendering function
+        this.growState = 0; // growState is also used in drawStem to determine the state of the growth animation
+        this.stemColor = 'rgb(0,' + Math.round(tb.rnd(127) + 127) + ',0)'; // stem color (cosmetic)
+
+        // set stemXrate witch is aslo used in drawStem
+        if (this.x <= 250) { // if the flowes x position is to the left
+            this.stemXRate = tb.rnd(this.x) / 25 / 25;
+        } else {
+            this.stemXRate = tb.rnd(480 - this.x) / 25 / 25;
+        }
+
+        this.pettleHue = Math.round(tb.rnd(360)); // set the pettleHue, any random Hue is fine like stemColor this is only cosmetic
+        this.pettleLightness = luck; // pettle lightness is based on luck, better luck will mean brighter colors.
+        this.offset = tb.rnd(3.14); // the offset is used to offset the rotation of the flower so they do not all look the same
+        this.pettleCount = Math.round(tb.rnd(pettleRange[0], pettleRange[1])); // pettleCount is also just to help keep the flowers from being boring.
+    };
+
+    /*
+         The drawStem function is used to animate, and draw the flowers.
+   */
+    var drawStem = function (drawToInstance, flowerIndex) {
+        var fl = flowers[flowerIndex];
+        con.strokeStyle = fl.stemColor;
+        con.save();
+        con.lineWidth = 5;
+        if (fl.nectar < 25) {
+            con.globalAlpha = tb.per(fl.nectar, 25) / 100;
+
+        } else {
+            con.globalAlpha = 1;
+        };
+
+
+
+        con.beginPath();
+        con.moveTo(fl.x + fl.flowerSize, 500);
+        for (var i = 0; i != drawToInstance + 1; i++) {
+            var yStep = ((500 - fl.y - fl.flowerSize) / 50);
+            if (i <= 24) {
+                var d = i;
+            } else {
+                var d = (50 - i);
+            }
+
+            if (fl.x <= 250) {
+                var x = fl.x + fl.flowerSize - (d * fl.stemXRate * i);
+            } else {
+                var x = fl.x + fl.flowerSize + (d * fl.stemXRate * i);
+            };
+            var y = 500 - i * yStep;
+
+            con.lineTo(x, y);
+
+        };
+        con.stroke();
+
+
+
+        var ic = 'rgb(' + Math.round(fl.nectar) + ',' + Math.round(fl.nectar) + ',0)';
+        //var pc = tb.hue(fl.pettleHue,(tb.per(fl.nectar,500)*2.55)*1.27);
+        //var pc = 'hsl('+fl.pettleHue+','+Math.round(tb.per(fl.nectar,500)+'%,50%)';
+        var pc = '#ffffff';
+        var pc = 'hsl(' + (fl.pettleHue * 30) + ',' + Math.round(tb.per(fl.nectar, 500)) + '%,' + fl.pettleLightness + '%)';
+        if (drawToInstance == 50) {
+
+            drawFlower(fl.x + fl.flowerSize, fl.y + fl.flowerSize, fl.flowerSize * 3, fl.pettleCount, ic, pc, fl.offset, flowerSmoothness);
+        } else {
+            drawFlower(x, y, (fl.flowerSize * 3) * (drawToInstance / 50), fl.pettleCount, ic, pc, fl.offset, flowerSmoothness);
+        }
+        con.restore();
+    };
+
+    /*
+	     The draw Flower function,
+		 this function just draws a flower, it does not animate the growth of the stem and flower in its entirety, for that look at drawStem
+	*/
+    var drawFlower = function (x, y, radius, pettles, innerFlowerColor, pettleColor, offset, smoothness) {
+        if (offset == undefined) var offset = tb.rnd(0, 3.14);
+        con.beginPath();
+        con.lineWidth = 2;
+        con.moveTo(x, y);
+        //pettles = 3;
+
+        var minPoints = pettles * 2; // minPoints is the minimum amount of points that will be needed to draw the flower
+        /* 
+		     smoothness is the number of points that will be used for each half of a pettle, 
+			 the higher the smoothness the more points there will be therefore you will have smoother pettles
+             however it will cost more CPU overhead.
+			 
+			 drawing a 8 pettle flower will end up beging a minamum of 16 points, witch would just basicly give you 8 lines
+			 ratter then pettles. however a smoothness of 2 would give you  (8*2)*2 = 32 points witch would be 4 points
+			 per pettle. A smoothness of 8 would give you (8*2)*8 = 128 points 16 points per pettle, witch would give you smoother
+			 pettles at an exspence of overhead.
+			 
+			 although it can be set as low as 1, it should be as low as 2 if performance is of concern.
+			 
+			 maybe smoothness should be an augument that could be set in an options menu
+	     */
+        if (!smoothness) var smoothness = 4;
+
+        var points = minPoints * smoothness; //  number of points per flower
+        var angleRate = Math.PI * 2 / points; // the number or radians to move per point
+        var perPettle = points / pettles; // the number of points for each pettle (an 4 pettle flower with a smoothness of 2 would be (16/4=4))
+        var innerRadius = radius / 3;
+        radius = radius * 2 / perPettle; // ajust the radius? I may have to rethink this.
+        var radUp = true; // a boolean meaning if the radical value in the polar graph should go up or down
+
+
+        /* 
+		     draw the flower
+			 start off by setting the current polarAngle to the given offset, this will help make each flower look different
+		*/
+        for (var polarAngle = offset, radical = 0; polarAngle < Math.PI * 2 + offset; polarAngle += angleRate) {
+            con.lineTo(x + Math.sin(polarAngle) * radical * radius, y + Math.cos(polarAngle) * radical * radius);
+            radUp ? radical += 1 : radical -= 1;
+            if (radical >= perPettle / 2) {
+                radUp = !radUp;
+            };
+            if (radical <= 0) {
+                radUp = !radUp;
+            };
+        };
+        con.closePath();
+        con.strokeStyle = '#000000';
+        con.stroke();
+        con.fillStyle = pettleColor; //tb.hue(Math.round(tb.rnd(11)),tb.rnd(32,127.5));
+        con.fill();
+
+        con.strokeStyle = '#000000';
+        con.beginPath();
+
+        con.arc(x, y, innerRadius, 0, 6.28);
+        con.closePath();
+        con.stroke();
+        con.fillStyle = innerFlowerColor;
+        con.fill();
+    };
+
+
+
+    var cls = function () {
+        var bg = con.createLinearGradient(0, 500, 0, 0);
+        bg.addColorStop(0, '#00ff80');
+        bg.addColorStop(0.75, '#0000ff');
+        con.fillStyle = bg;
+        con.fillRect(0, 0, 500, 500);
+    };
+
+    /* the games state machine */
+    var state = {
+        firstTime: true,
+        start: function () {
+            if (state.firstTime) {
+                conDom = tb.g('game'), // stores a reference to the canvas DOM object
+                con = conDom.getContext('2d'), // stores a reference to the canvas context object
+                con.textBaseline = 'top'; // set the context text baseline to top
+                sheet.src = 'img/fly_32_1.png';
+                sheet.onload = function () { // when the sheet loads
+                    attachEvents(); // attach event handlers to the canvas
+                    currentState = 'menu'; // and change the current state to 'menu'.
+                };
+                if (tb.getIt() != undefined) {
+                    fly.highScore = tb.getIt();
+                }
+                state.firstTime = false;
+				centerApp();
+            };
+        },
+        maxMenuFlowers: 10,
+        menuFlowers: [],
+        menuFlowerRadian: 0,
+        menuMessage: tb.breakToLines('Use the W,A,D keys, or touch screen, to move Mr BtterFly. Try your best to keep your nectar bar from fully depleting, by gathering Nectar from flowers. As time goes by your luck will change. ', 12, 400),
+        menu: function () {
+            // if menuFlowers have not reached the maximum
+            if (state.menuFlowers.length < state.maxMenuFlowers) {
+                var i = state.menuFlowers.length;
+                state.menuFlowers[i] = {};
+                var mf = state.menuFlowers[i];
+                mf.size = tb.rnd(75) + 25;
+                mf.x = Math.round(tb.rnd(mf.size / 2, 500 - (mf.size / 2)));
+                mf.y = Math.round(tb.rnd(mf.size / 2, 500 - (mf.size / 2)));
+                mf.pettleColor = 'hsl(' + Math.round(tb.rnd(360)) + ',100%,' + Math.round(tb.rnd(50, 100)) + '%)';
+                mf.offset = tb.rnd(3.14);
+                mf.pettleCount = Math.round(tb.rnd(pettleRange[0], pettleRange[1]))
+            };
+
+            //if(keys[32] && state.menuFlowers.length==state.maxMenuFlowers){
+            if (state.menuFlowers.length == state.maxMenuFlowers && (pressed || keys[32])) {
+                if (tb.boundingBox(pointer[0], pointer[1], 1, 1, 100, 200, 300, 50) || keys[32]) {
+                    state.menuFlowers = [];
+                    newGame();
+                    currentState = 'game';
+                };
+            };
+        },
+
+        /* the game state function that updates the game model */
+        game: function () {
+            //var st=new Date();
+            //cls();
+
+            if (keys[87] /*|| pointer[1] < fly.y*/ ) { // if W key is pressed fly up
+                if (fly.dy > -5) fly.dy -= 0.25;
+                fly.nectar -= 0.5;
+                if (new Date() - fly.ani.last >= fly.ani.rate * 0.25) {
+                    fly.ani.cell++;
+                    fly.ani.last = new Date();
+                    if (fly.ani.cell == 2) fly.ani.cell = 0;
+                };
+            } else { // if W is not pressed then gravity begins to win.
+                if (fly.dy < 5) fly.dy += 0.25;
+            };
+
+
+            if (keys[65] || keys[68] /*|| pointer[0]!=fly.x*/ ) { // if A or D key is pressed
+                fly.nectar -= 0.5;
+                if (keys[65] /*|| pointer[0] < fly.x*/ ) { // if A start going left
+                    if (fly.dx > -5) fly.dx -= 0.25;
+                };
+                if (keys[68] /*|| pointer[0] > fly.x */ ) { // if D start going right
+                    if (fly.dx < 5) fly.dx += 0.25;
+                };
+            } else { // else you loose your horizontal momentum
+                if (fly.dx > 0) fly.dx -= 0.25;
+                if (fly.dx < 0) fly.dx += 0.25;
+            };
+
+
+            fly.x += fly.dx; // apply deltaX and deltaY to current x and y values
+            fly.y += fly.dy;
+
+            if (fly.x < 0) fly.x = 0; // check x and y boundaries
+            if (fly.x > 450) fly.x = 450;
+            if (fly.y > 450) fly.y = 450;
+            if (fly.y < 0) fly.y = 0;
+
+            // if flowers array has not reached max flowers, and it's time for a chance for a new flower to grow...
+            if (new Date() - lastRoll >= rollDelay) {
+                lastRoll = new Date(); // set last roll time to now
+                if (flowers.length < maxFlowers) {
+
+                    var roll = tb.rnd(100); // do a roll
+                    if (roll <= luck) { // if roll is in players favor...
+                        var i = flowers.length;
+                        flowers[i] = new flower(i); // generate a new flower
+                    };
+                };
+            };
+
+            // loop thru flowers array
+            for (var f = 0; f != flowers.length; f++) {
+                var i = flowers[f];
+                if (i.grown) { // if the flower is fully grown
+                    if (tb.boundingBox(fly.x, fly.y + 30, 20, 20, i.x, i.y, i.flowerSize * 2, i.flowerSize * 2)) { // if the fly collides with the flower
+                        if (i.nectar >= 20) {
+                            fly.nectar += 20 * 0.1;
+                            i.nectar -= 20;
+                            fly.score += 20;
+                        } else {
+                            fly.nectar += i.nectar;
+                            fly.score += Math.floor(i.nectar);
+                            i.nectar = 0;
+                        };
+                        if (fly.nectar > fly.maxNectar) fly.nectar = fly.maxNectar; // the fly can only have so much nectar
+                    } else {
+                        i.nectar -= 0.25;
+                        if (i.nectar < 25) {
+                            if (i.y < 480) {
+                                i.y++;
+                            };
+                        };
+                    };
+                    if (i.nectar < 0) i.nectar = 0;
+                } else { // else if the flower is not grown
+                    if (i.growState < 50) {
+                        i.growState++;
+                    } else {
+                        i.grown = !0;
+                    };
+                };
+
+                // flower size based on nectar?
+                //i.flowerSize = i.nectar * 0.05;
+
+                // draw the flower in its current state
+                //drawStem(i.growState, f);
+
+                if (i.nectar <= 0) {
+                    killList[killList.length] = f;
+                };
+            }; // end loop threw flowers array;
+
+
+            if (killList.length > 0) {
+                for (var kill = killList.length - 1; kill != -1; kill--) {
+                    flowers.splice(killList[kill], 1);
+                };
+                killList = [];
+                lastRoll = new Date(); // set last roll time to now
+            };
+            //con.drawImage(sheet, fly.ani.cell * 16, 0, 16, 15, fly.x, fly.y, 50, 50);
+
+
+            if (new Date() - lastLuckChange >= 30000) { // if it is time for luck to change
+
+                luck = Math.round(tb.rnd(fly.luck[1] - fly.luck[0])) + fly.luck[0];
+                if (fly.luck[0] > 10) {
+                    fly.luck[0] -= 5;
+                    fly.luck[1] -= 5;
+                }
+                //rollDelay=2500-luck*20;
+                lastLuckChange = new Date();
+            };
+            if (new Date() - fly.ani.last >= fly.ani.rate) {
+                fly.ani.cell++;
+                fly.ani.last = new Date();
+                if (fly.ani.cell == 2) fly.ani.cell = 0;
+            };
+
+            if (fly.y == 450 || fly.nectar <= 0) { // check if the player lost.
+                // if the player lost...
+                fly.nectar = 0;
+                //clearInterval(t);
+                currentState = 'lostGame';
+            };
+            //disp();
+
+            // frame counter, game seems to stay at 12FPS on my Asus Intel Atom N570 EEE-PC
+
+            //out(FPS + 'FPS')
+            /*
+            FC++;
+            if (new Date() - lastFrameCount >= 1000) {
+                FPS = FC;
+                FC = 0;
+                lastFrameCount = new Date();
+            };
+            */
+
+            //var et=new Date();
+            //out('frame tick:' +Number(et-st)+'ms, FPS:'+FPS);
+
+
+        }, // end game
+
+
+
+        /*State when game is over*/
+        lostGame: function () {
+            if (fly.score > fly.highScore) {
+                fly.highScore = fly.score;
+                tb.parkIt(fly.highScore);
+            };
+            if (keys[32] || pressed) {
+                newGame();
+                currentState = 'menu';
+            };
+
+        }
+    }
+
+    /* for each game state there is a cosponsoring render function*/
+    var render = {
+        start: function () {
+            cls();
+            con.fillText('I am loading...', 10, 10);
+        },
+        menu: function () {
+            cls();
+            for (var i = 0; i != state.menuFlowers.length; i++) { // loop thru state.menuFlowers and draw all flowers
+                state.menuFlowers[i];
+                var mf = state.menuFlowers[i];
+                drawFlower(mf.x, mf.y, mf.size, mf.pettleCount, '#ffff00', mf.pettleColor, mf.offset, flowerSmoothness);
+                //drawFlower(250,250,mf.size,mf.pettleCount,'#ffff00',mf.pettleColor, mf.offset,8);
+            };
+            con.fillStyle = 'rgba(0,0,0,0.75)';
+            if (i != state.maxMenuFlowers) { // if the max flowers have not yet been reached
+                var menuSize = Math.round(tb.per(i, state.maxMenuFlowers) * 4);
+                var menuHalf = Math.round(menuSize / 2);
+                con.fillRect(250 - menuHalf, 250 - menuHalf, menuSize, menuSize);
+            } else { // else render the menu
+                con.strokeStyle = '#ffffff';
+                con.fillRect(50, 50, 400, 400); // draw menu background
+                con.lineWidth = 4;
+                con.strokeRect(50, 50, 400, 400);
+
+                con.fillStyle = '#ff0000'; // draw play new game button
+                con.fillRect(100, 200, 300, 50);
+                con.strokeRect(100, 200, 300, 50);
+
+                con.fillStyle = '#ffffff'; // draw game Title
+                con.font = '80px arial';
+                con.textAlign = 'center';
+                con.fillText('bFly', 250, 70);
+
+                con.font = '40px arial'; // draw new game button lable
+                con.fillText('new game', 250, 200);
+
+                con.font = '15px arial'; // draw how to play
+                con.fillText('How to Play:', 250, 260);
+                disp(150, 350, true);
+
+                con.strokeStyle = '#ffffff';
+                con.font = '12px courier';
+
+                con.beginPath(); // point to nectar
+                con.moveTo(115, 330);
+                con.lineTo(100, 300);
+                con.closePath()
+                con.stroke();
+
+                con.beginPath(); // point to luck
+                con.moveTo(150, 335);
+                con.lineTo(150, 290);
+                con.closePath()
+                con.stroke();
+
+                con.beginPath(); // point time to luck change
+                con.moveTo(135, 365);
+                con.lineTo(160, 400);
+                con.closePath()
+                con.stroke();
+
+                con.fillStyle = '#ffffff';
+
+                // print point to lables
+                con.fillText('Nectar', 100, 288);
+                con.fillText('Luck', 150, 278);
+                con.fillText('Time to luck change', 160, 400);
+
+
+                // print how to play message
+                tb.printStringArrayToContext(state.menuMessage, con, 12, 325, 300);
+
+                // print high score if it is greater then 0
+
+                // render current high score
+                con.fillText('High Score: ' + tb.formatNumber(fly.highScore), 250, 170);
+
+                // if a mouse cursor hovers the new game button animate a flower
+                if (tb.boundingBox(pointer[0], pointer[1], 1, 1, 100, 200, 300, 50)) {
+                    drawFlower(100, 200, 40, 7, '#ffff00', '#ffffff', state.menuFlowerRadian, 2);
+                    state.menuFlowerRadian += 0.05;
+                    if (state.menuFlowerRadian >= Math.PI * 2) state.menuFlowerRadian -= Math.PI * 2;
+                }
+            }
+
+        },
+        game: function () {
+            cls(); // clear screen
+            for (var f = 0; f != flowers.length; f++) {
+                var i = flowers[f];
+                drawStem(i.growState, f); // draw all flowers in the flowers array
+            };
+            con.drawImage(sheet, fly.ani.cell * 16, 0, 16, 15, fly.x, fly.y, 50, 50); // be sure to draw Mr bFly
+            disp(); //  draw the display
+        },
+        lostGame: function () {
+            if (!gameOver) {
+                con.fillStyle = 'rgba(0,0,0,0.8)';
+                con.strokeStyle = '#ffffff';
+                con.lineWidth = 4;
+                con.fillRect(125, 125, 250, 250);
+                con.strokeRect(125, 125, 250, 250);
+
+                con.fillStyle = '#ffffff';
+                con.font = '40px arial';
+                var mess = 'game over'
+
+                con.textAlign = 'center';
+                con.fillText(mess, 250, 125);
+
+                var mess = tb.breakToLines('Oh no it looks as though mr butterFly could not keep up with its futial strugle\, how sad.', 7, 250);
+                var y = tb.printStringArrayToContext(mess, con, 15, 250, 180);
+                //var now=new Date();
+
+                con.fillText('your score: ' + tb.formatNumber(fly.score), 250, y);
+                con.fillText('click or press to continue', 250, y + 40);
+                gameOver = !0;
+            };
+        }
+    };
+
+
+    var main = function () {
+        var lt = new Date();
+        var thread = function () {
+            if (new Date() - lt >= 1000 / 20) {
+                state[currentState]();
+                render[currentState]();
+                lt = new Date();
+            };
+            requestAnimFrame(thread); // requestAnimFrame does seem to work better then var t=setTimeout(thread,1000/frameRate)requestAnimFrame(thread);  // requestAnimFrame does seem to work better then var t=setTimeout(thread,1000/frameRate)
+            //var t = setTimeout(main, 1000 / 12);
+        };
+        thread();
+        //state[currentState]();
+
+
+    };
+
+	
+	// center the canvas
+	var centerApp=function(){
+	     conDom.style.top='25px';
+	     conDom.style.left=Math.round(window.innerWidth/2-250)+'px';
+	};
+	
+    /* set event listeners */
+    global.addEventListener('load', function (e) { // add onload event handler to global (window) this is where it all begins after the anonymous function is called
+	    /* CROSS YOUR FINGERS! -- here is where it all begins */
+        if (tb.checkCanvas()) { // check for the canvas context
+            main(); // launch main thread if the browser supports canvas
+        } else {
+            document.write('your browser does not seem to support canvas, sorry.') //else inform the user of the bad news.
+        };
+    });
+	global.addEventListener('resize',function(e){
+	     if(conDom!=undefined){
+		     centerApp(); // center the app on resize
+		 };
+	});
+    global.addEventListener('keydown', function (e) { // if you find a key has been pressed down
+        if (e.keyCode == 32) e.preventDefault(); // don't scroll if the space bar is pressed
+        keys[e.keyCode] = !0; // set it's boolean true
+    });
+    global.addEventListener('keyup', function (e) { // if a key is released
+        keys[e.keyCode] = !1; // set its boolean false
+    });
+	
+    var attachEvents = function () {
+        conDom.addEventListener('mousemove', function (e) {
+
+            //works fine if you do not scale, and position without any nested elements other then body
+            pointer[0] = e.clientX - conDom.offsetLeft;
+            pointer[1] = e.clientY - conDom.offsetTop;
+
+
+            // if you are going to scale full screen you might want to do something like this
+            // pointer[0]=Math.floor(tb.per(e.clientX,window.innerWidth)*5);
+            // pointer[1]=Math.floor(tb.per(e.clientY,window.innerHeight)*5);
+        });
+        conDom.addEventListener('mousedown', function (e) {
+            pressed = !0;
+        });
+        conDom.addEventListener('mouseup', function (e) {
+            pressed = !1;
+        });
+
+        // add basic support for touch devices, this may need allot of work.
+        conDom.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            pressed = !0;
+            keys[32] = !1, keys[87] = !1, keys[65] = !1, keys[68] = !1;
+        });
+        conDom.addEventListener('touchend', function (e) {
+            e.preventDefault();
+            pressed = !1;
+            pointer[0] = -1;
+            pointer[1] = -1;
+            keys[32] = !1, keys[87] = !1, keys[65] = !1, keys[68] = !1;
+        });
+        conDom.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            keys[32] = !1, keys[87] = !1, keys[65] = !1, keys[68] = !1;
+
+            if (currentState != 'game') {
+                keys[32] = !0;
+            };
+            var touch = e.touches[0];
+
+			// should be good if not fullscreen
+            pointer[0] = touch.clientX - conDom.offsetLeft;
+            pointer[1] = touch.clientY - conDom.offsetTop;
+
+            // should be good if scaled 100%.
+            //pointer[0] = Math.round(tb.per(touch.clientX,window.innerWidth))*5,
+            //pointer[1] = Math.round(tb.per(touch.clientY,window.innerHeight))*5;
+
+            if (pointer[1] < fly.y) {
+                keys[87] = !0;
+            };
+            if (pointer[0] > fly.x) {
+                keys[68] = !0;
+            };
+            if (pointer[0] < fly.x) {
+                keys[65] = !0;
+            };
+        });
+    }; // end attach events
+
+})(window);
