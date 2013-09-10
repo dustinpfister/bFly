@@ -1,0 +1,19 @@
+This is my 2013 game submission to js13kgames.com 2013 competition
+
+controls: w,a,d keys, or touch and move on touch screens.
+
+Poor Mr butterfly is on a hopeless mission to find the nectar he needs to survive, little does he know 
+that he is in for some very bad luck. Well that does not keep him from trying to endure the futile endeavour of 
+his existence.
+
+The object of the game is to keep Mr bFly in the air, doing so costs nectar. You gain more nectar by 
+flying over to the flowers that should be generated, based on your current luck. If you run out of nectar 
+or fall to the bottom of the screen you loose.
+
+Mr bFlys current amount of nectar as well as the maximum amount of nectar that he can hold is 
+expressed in the red nectar half circle at the top of the screen. The probability of flower occurrence, 
+as well as the amount of Nectar found in the flowers depends on Mr bFlys current "Luck" witch is 
+displayed by a green half circle at the top of the screen. Every so often Mr bFlys luck will change for better
+or worse, but as time goes by, sadly Mr bFly will experience very "bad luck". The amount of time to the 
+next luck change is shown in final spring green half circle.
+
