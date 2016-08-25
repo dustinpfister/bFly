@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+</head>
+<body>
+  <div id="screen" style="position:relative; background:#8f8f8f; width:740px; height: 500px;">
+    <div id="dispContainer" style="position:absolute;left:520px;top:20px;">
+      <canvas id="disp" width="200" height="460"></canvas>
+    </div>
+    <div id="player" style="position:absolute; background:#ff0000;width:20px; height:20px;z-Index:11;"></div>
+  </div>
+  
+  <div id="out">hello world</div>
+  <script type="text/javascript" >
+    var tb={};
+    tb.bb=function(x1,y1,w1,h1,x2,y2,w2,h2){
+      var o=false;
+      if( (x1 > x2+w2) || (x1 +w1 < x2) || (y1+h1 < y2) || (y1 > y2+h2) ){
+        o=false;
+      }else{
+        o=true;
+      };
+      return o;
+    };
+    tb.g=function(id){
+      return document.getElementById(id);
+    };
+    tb.append=function(what, where){
+      if(typeof what == 'string') what = tb.g(what);
+      if(typeof where == 'string') where = tb.g(where);
+      where.appendChild(what);
+    };
+    tb.per = function (low, high) {
+      return low * 100 / high;
+    };
+    tb.checkCanvas = function () {
+      var el = document.createElement('canvas');
+      return !!el.getContext('2d') ? true : false;
+    };
+    
+    
+    var keys=[];
+    var app=function(){
+      var bird={
+        x:240,y:480,
+        level:1,
+        nectar:100,
+        maxNectar:500,
+        airBorn:false
+      };
+      
+      var flowers=[],flowerChance=100,maxFlowers=15,killList=[],gameOver=false,t=null;
+      var luck = 100,lastTime=new Date();
+      var lastRoll=new Date(), rollDelay=2500-luck*20;
+      var dispCon=tb.g('disp').getContext('2d');
+      
+      for(var k=0,str=''; k!=256;k++){
+          keys[k]=false;
+      };
+      
+      var disp=function(){
+        var c=dispCon;
+        c.fillStyle='#000000';
+        c.fillRect(0,0,200,500);
+        c.font='15px monospace';
+        
+        c.fillStyle='#8f8f8f';
+        c.fillText('Nectar',25,24);
+        c.fillText('Luck',25,74);
+        c.fillRect(25,25,150,25);
+        c.fillRect(25,75,150,25);
+        c.fillStyle='#ffff00';
+        c.fillRect(25,25,Math.round(tb.per(bird.nectar,bird.maxNectar)*1.5),25);
+        c.fillRect(25,75,Math.round(tb.per(luck,100))*1.5,25);
+      };
+      
+      var flower=function(){
+        this.x=Math.round(Math.random()*380+60);
+        this.y=Math.round(Math.random()*280+110);
+        this.nectar=Math.round(Math.random()*55+(luck*2));
+        var fl = document.createElement('div');
+        tb.append(fl,'screen');
+        this.div=fl;
+        var n=fl.style;
+        n.position='absolute';
+        n.width='20px';
+        n.height='20px';
+        n.left=this.x+'px';
+        n.top=this.y+'px';
+        n.background='rgb('+this.nectar+','+this.nectar+',0)';
+      };
+      
+      
+      var thread=function(){
+        var el=tb.g('player');
+        if(keys[32]){
+         bird.y-=10;
+         if(bird.y < 0) bird.y=0;
+         bird.nectar-=1;
+         bird.airBorn=true;
+         keys[32]=false;
+        }else{
+          if(bird.y < 480){
+             bird.y+=1.75;
+          }else{bird.y=480;}   
+        };
+        
+        if(bird.airBorn && bird.y==480 || bird.nectar<=0){
+          bird.nectar=0;
+          gameOver=true;
+          clearInterval(t);
+        };       
+        
+        if(keys[65]) bird.x-=1.75;
+        if(keys[68]) bird.x+=1.75;
+        if(bird.x < 0) bird.x=0;
+        if(bird.x > 480) bird.x=480; 
+        
+        
+        if(flowers.length < maxFlowers){
+          if(new Date()-lastRoll >=rollDelay){
+            lastRoll=new Date();
+            var roll = Math.random()*100;
+            if(roll <= flowerChance){
+              var i = flowers.length;          
+              flowers[i]=new flower(i);
+            };
+          };
+        };
+        
+        
+        for(var f=0; f!=flowers.length;f++){
+          var i=flowers[f];
+          if(tb.bb(bird.x,bird.y,20,20,i.x,i.y,20,20)){
+            
+            if(i.nectar >=20){
+              bird.nectar+=20*0.1;
+              i.nectar-=20;
+            }else{
+              bird.nectar+=i.nectar;
+              i.nectar=0;
+            };
+            if(bird.nectar > bird.maxNectar) bird.nectar = bird.maxNectar;
+          }else{
+            i.nectar-=0.25;
+            if(i.nectar < 10){
+              if(i.y < 480){
+                i.y++;
+              };
+            };
+          };
+          if(i.nectar <=0){
+            killList[killList.length]=f;
+          };
+          i.div.style.background='rgb('+i.nectar+','+i.nectar+',0)';
+          i.div.style.top=i.y+'px';
+        };
+        if(killList.length > 0){
+          for(var kill=killList.length-1; kill!=-1;kill--){
+            tb.g('screen').removeChild(flowers[killList[kill]].div);
+            flowers.splice(killList[kill],1);
+          };
+          killList=[];
+        };
+        el.style.left=bird.x+'px';
+        el.style.top=bird.y+'px';
+        
+        if(new Date()-lastTime >=1000*30){
+          luck = Math.round(Math.random()*90)+10;
+          flowerChance=luck;
+          rollDelay=2500-luck*20;
+          lastTime=new Date();
+        };
+        
+        disp();
+      };
+      t = setInterval(thread,80);
+    };
+    window.onkeydown=function(e){
+      if(e.keyCode==32) e.preventDefault();
+      keys[e.keyCode]=true;
+    };
+    window.onkeyup=function(e){
+      keys[e.keyCode]=false;
+    };
+    window.onload=function(){
+      if(tb.checkCanvas()){
+        app();
+      }else{
+        document.write('the game requiers canvas support');
+      };
+    };
+  </script>
+</body>
+</html>

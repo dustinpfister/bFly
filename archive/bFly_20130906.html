@@ -1,0 +1,921 @@
+
+<!--
+  Bfly version 2013.08.28
+  Copyright 2013 by Dustin Pfister
+  
+  Devloped for 13k Games compatision 2013
+  
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>bFly</title>
+</head>
+<body style="margin:0px;padding:0px;">
+  <!--<div id="screen" style="position:relative; background:#8f8f8f; width:100%; height:100%;">-->
+    
+    <canvas id="game" width="500" height="500" <!--style="position:absolute;width:100%;height:100%;"--> ></canvas>
+  <!--</div>-->
+<!--  <div id="out"></div>-->
+  <script type="text/javascript" >
+
+/*
+     I should be using requestAnimFrame(func)  in place of vat t=setTimeout(func,1000/frameRate),
+	 becuase of this:
+	 
+	 http://jlongster.com/Making-Sprite-based-Games-with-Canvas
+	 
+	 seems to check out, so...
+*/
+window.requestAnimFrame = (function () {
+     return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function (callback) { window.setTimeout(callback, 1000 / 60);};
+})();
+
+  /*
+     'toolBox custom API' for 13k game bFly 
+  */
+  var tb = {  // all reusable functions tucked away in single global token tb. 
+     /* 
+	     tb.boundingBox -- bounding box collision detection 
+	     give the x,y,width, and height of one display object,
+		 and the x,y,width,and,height of another display object.
+		 The function will then return true or false depending if 
+		 the two objects overlap.
+	 */
+    boundingBox: function (x1, y1, w1, h1, x2, y2, w2, h2) {
+        var o = !1;  // default to false
+        if ((x1 > x2 + w2) || (x1 + w1 < x2) || (y1 + h1 < y2) || (y1 > y2 + h2)) { // if the two objects do not overlap
+            o = !1;  //then they do not overlap
+        } else {
+            o = !0;  // else they do
+        };
+        return o; // return the boolean answer
+    },
+	distance:function (x1, y1, x2, y2) {
+  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+   },
+	/*
+	     tb.rnd --  random number function
+		 
+		 tb.rnd(100)  is the same as...
+		 Math.random()*100 
+		 
+		 tb.rnd(50,100) is the same as...	 
+		 Math.random()*50+50;
+	*/
+    rnd: function (low, high) {
+        if (!high) {
+            return Math.random() * low;
+        } else {
+            return Math.random() * (high - low) + low;
+        };
+    },
+	
+	/*
+	     tb.rndInt -- random Integer function
+		 
+		 tb.rndInt(25,75)  is the same as
+		 Math.round(Math.random()*50)+25;
+		 
+		 it just helps makes things a little neater and condense
+	*/
+	rndInt: function(low,high){
+	     return Math.round(tb.rnd(low,high));
+	},
+	
+	/*
+	     tb.g -- simple get function, just wraps document.getElementById
+		 
+		 tb.g('theElement')  is the same as...
+		 document.getElementById('theElement')
+	*/
+    g: function (id) {
+        return document.getElementById(id);
+    },
+	
+	
+	/*
+	     tb.per -- percent function
+		 
+		 tb.per(2,3) should return 66.666...
+	*/
+    per: function (low, high) {
+        return low * 100 / high;
+    },
+	
+	/*
+	   tb.checkCanvas -- check canvas test
+	   check for the html5 canvas 2d context and return false if it is not found
+	*/
+    checkCanvas: function () {
+        try {
+            var el = document.createElement('canvas');  // make a canvas element
+            return !!el.getContext('2d') ? !0 : !1;  // check for the context, and return true if it is there.
+        } catch (e) {
+            return !1;  // if and error happens then return false
+        };
+    },
+	/*
+	     tb.breakToLines -- break a long string into an array of strings given a certian char width, and line width 
+	*/
+	breakToLines:function(string, charWidth, lineWidth){
+		 var stringArray=[], sai=0,  // the string array and its index pointer sai
+		 currentWord='', // a string that will hold the current word
+		 si=0, // the current string index
+		 lw=0; // the current line width
+		 
+		 while(si!=string.length){
+		     if((currentWord.length+1) * charWidth+lw > lineWidth){  // if adding the next char is going to have us go over our linewidth then we need to go to a new line
+			     sai++;
+				 lw=0;
+			 };
+			 if(stringArray[sai]==undefined){stringArray[sai]='';};  // if the current array string is undefined then make it an empty string
+			 
+		     currentWord+=string[si]; // add the next char to the current word.
+			 
+			 /* 
+			     if the current char is a space or we have reach the end of the string 
+				 then write the current word to the current line
+			 */
+			 if(string.charCodeAt(si)==32 || string.length == si+1){  
+			     stringArray[sai]+=currentWord;
+				 lw+=currentWord.length*charWidth;
+			     currentWord='';
+				 
+			 };
+			 /*
+			     if the length of the world next time arround is going to be longer then the line width,
+				 then we need to break the word down and split it accross lines.
+			 */
+			 
+			 if((currentWord.length+1)*charWidth > lineWidth){  // check if the next char add to the word is going to go over the line width
+			     if(currentWord.length+1 != string.length-1){  // if the next char does not bring us to the end of the string
+				     if(string.charCodeAt(si+1)!=32){  // the it should be safe to check if it is a space
+			             stringArray[sai]+=currentWord+'-'; // if it is not, use the '-' charicter
+				     }else{
+					     stringArray[sai]+=currentWord; // else just write what we have to the current line
+					 }
+				 };
+				 currentWord='';
+				 sai++;
+				 lw=0;
+			}
+			 
+		     si++; // go to next char in string
+		 };
+		 
+	     return stringArray;
+		 
+	},
+	
+	/*
+	     tb.printStringArrayToContext -- print an array of strings to a html 5 canvas context produced by tb.breakToLines
+	*/
+	printStringArrayToContext:function(theArray, context, charSize,x,y){
+	    // context.textBaseline='top';
+		 context.font=charSize+'px arial';
+		 context.fillStyle='#ffffff';
+		 //context.textAlign='center';
+	     for(var l=0; l!=theArray.length; l++){
+		     context.fillText(theArray[l],x,y+(l*charSize));
+		 };
+		 return y+(l+1)*charSize;  // return the y position where it is okay to place more text.
+	}
+}; // end of 'toolBox custom API' for 13k game 'bFly'
+
+
+
+/* keys array */
+//var keys = []; // used to store key state boolean values
+
+/* begin the app*/
+(function (global) {  // beginning of bFly 13k game object
+
+    /* all variables that should be shared across functions place here*/
+	var conDom=tb.g('game'),  // stores a reference to the canvas DOM objct
+    con = conDom.getContext('2d'), // stores a reference to the canvas context
+    sheet = new Image(),  // the games one sprite sheet.
+    currentState = 'menu',  // current state in the games state machine
+    fly, // the fly object stores data of the players fly such as x,y, deltaX, deltaY, ect.
+    flowers, // the flowers array, stores and array of objects made by the flower constructor 
+
+   /* graphics and performance! */
+    maxFlowers=8,  // maximum flowers allowed, should be kept low to conserve overhead.	
+	flowerSmoothness=8, // range is form 2 (jagged flowers but less overhead) upwards, higher numbers give smoother flowers, but costs CPU overhead.
+    pettleRange=[3,9], // the pettle range is the range of pettles that a flower will have, lower range will give better performance
+
+    killList, // list of flowers to be removed from the flowers array.
+    luck,  // the fly (players) current luck that has a potential range from 0 to 100.
+    lastRoll,  // stores a date object that represents the last time a roll for a new flower has occurred, if roll is <= luck then a new flower will bloom.
+    rollDelay, // rollDelay is the amount of time that should pass between rolls, it should be set to a fixed value such as 1000, or perhaps change dynamicly based on luck
+    lastLuckChange, // like lastRoll stores a Date object that is the last time the fly's luck has change
+    FPS = 0,  // Frames Per Second (FPS counter)
+    FC = 0, // Frame Count (FPS counter)
+    lastFrameCount = new Date(), // last frame count (FPS counter)
+	gameOver, // game over boolean
+	highScore,
+	gameTimeStart,
+	keys = [], // used to store key state boolean values
+    pointer=[0,0], // mouse/touch pointer
+	pressed=false; // used with mouse/touch events
+	
+    for (var k = 0, str = ''; k != 256; k++) { // set all key states to false
+        keys[k] = !1;
+    };
+		
+    var newGame = function () { // new game function sets up a new game
+        fly = {  // set up the fly (player) object
+            x: 225, // set x, and y pos to the center of the screen
+            y: 225,
+            dx: 0, // start delta x, and y out at 0
+            dy: 0,
+			score:0, // set score to 0
+            level: 1,  // level propertie not yet in use, may be removed
+            nectar: 250, // starting nectar
+            maxNectar: 1500,  // the maximum nectar that the fly can hold.
+            luck: [75, 100], // the flys luck range, in a new game the fly starts out with good luck, then it should slowly get harder
+            ani: {  // fly.ani object has to do with fly animation
+                cell: 0, // current cell
+                rate: 300, // cell rate
+                last: new Date() // last time scence cell flip
+            }
+        };
+        flowers = [], killList = [];  // set flowers array, and flowers killList to and empty array
+       // maxFlowers = 10; 
+        //t = null;
+        luck = 100,  // always start out the game with great luck
+        lastLuckChange = new Date(); // and make note of the last time the luck has been set
+        lastRoll = new Date(); // a flower roll has not yet been made, but make a note of the time so the first roll happens when flower roll delay has been reached 
+        rollDelay = 1000; // witch we shale set at a fixed rate of 1000 for now.
+		score=0;
+		gameTimeStart=new Date();
+        gameOver=false; // set the game over boolean to false
+    };
+    newGame(); // set up a new Game
+	
+	
+	/* out function used for debugging like console.log should be removed in production app*/
+    var out = function (mess, x, y) {
+        if (mess == undefined) return;
+        if (x == undefined) var x = 0;
+        if (y == undefined) var y = 0;
+        con.font = '12px monospace';
+		con.textAlign='left';
+        //con.textBaseline = 'top';
+        con.fillStyle = '#000000';
+        con.fillText(mess, x, y);
+    };
+
+	
+	/*  
+	     disp render display function 
+		 this function will be used to display information to the player
+	
+	*/
+    var disp = function (dispX,dispY,demo) {
+        if(!demo) var demo=false;
+		if(!dispX || !dispY){
+		     var dispX = 250, dispY = 60; // position of display
+		};
+		 /* 
+		 dispX sets the position of the nectar, and luck indicator bars
+		 dispX and dispY are the position of the concentric circles orgin
+         so then 50,50 would place it in the upper left corner
+         250,50 would be in the upper upper center.	 
+		 */
+		 if(demo){
+		     var necBar=1.25,luckBar=1.75,changeTime=0.30;
+		 }else{
+		     var necBar = tb.per(fly.nectar, fly.maxNectar) / 100 + 1,  // determin the nectar bar length
+		     luckBar = luck / 100 + 1, // find luck bar length
+             now=new Date(),
+	         changeTime = tb.per(now-lastLuckChange,30000)/100;
+		 };
+		
+         var c = con;  // reference to context
+		
+        c.fillStyle = 'rgba(128,128,128,0.5)';  // set background color
+        c.strokeStyle = 'rgba(0,0,0,1)'; // set bar outline color
+        c.lineWidth=2;  // thicker then normal outline width
+		
+		// draw nectar bar and luck bar background
+        c.beginPath(); 
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 30, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill nectar bar background
+		
+		// draw luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 10, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();  // stroke and fill luck bar background
+
+		// draw luck change bar background
+        c.beginPath();
+        c.arc(dispX, dispY+5, 25, Math.PI * 2,Math.PI);
+        c.arc(dispX, dispY+5, 10, Math.PI,Math.PI * 2 , true);
+        c.closePath();
+        c.stroke();
+        c.fill();  // stroke and fill luck change bar background
+		
+		// draw nectar bar
+        c.fillStyle = 'rgba(255,0,128,0.75)';  // the nectar bar color
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * necBar);
+        c.arc(dispX, dispY, 30, Math.PI * necBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+
+		// draw luck bar
+        c.fillStyle = 'rgba(0,192,0,0.75)';  // luck bar color, why not green?
+
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * luckBar);
+        c.arc(dispX, dispY, 10, Math.PI * luckBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+		
+		// draw luck change bar 
+		
+		
+		c.fillStyle = 'rgba(0,255,128,0.75)';  // luck change change color
+        c.beginPath();
+        c.arc(dispX, dispY+5, 25, Math.PI, Math.PI-Math.PI*changeTime,true);
+        c.arc(dispX, dispY+5, 10, Math.PI-Math.PI*changeTime,Math.PI,  false);
+        c.closePath();
+        c.stroke();
+        c.fill();  // stroke and fill luck change bar 
+		
+	    // draw score
+		if(!demo){
+		c.strokeStyle='#000000';
+		c.fillStyle='#ffffff';
+		c.font='15px courier';
+		c.textAlign='center';
+		c.strokeText('score: '+fly.score,100,20);
+		c.fillText('score: '+fly.score,100,20);
+		}
+    };
+
+
+    var flower = function () {  // the flower constructer function
+        this.x = Math.round(tb.rnd(380) + 60); // the x position of the flower
+        this.y = Math.round(tb.rnd(280) + 110); // the y position of the flower
+        this.nectar = Math.round(tb.rnd(50 + luck, luck * 4.4 + 60)); // the amount of nectar that the flower has
+        this.flowerSize = this.nectar * 0.05; // the flower size is based on the amount of nectar
+
+        this.grown = !1;  // grown boolean set to false, this is used in the drawStem rendering function
+        this.growState = 0; // growState is also used in drawStem to determine the state of the growth animation
+        this.stemColor = 'rgb(0,' + Math.round(tb.rnd(127) + 127) + ',0)';  // stem color (cosmetic)
+		
+		// set stemXrate witch is aslo used in drawStem
+        if (this.x <= 250) {  // if the flowes x position is to the left
+            this.stemXRate = tb.rnd(this.x) / 25 / 25;  
+        } else {
+            this.stemXRate = tb.rnd(480 - this.x) / 25 / 25;
+        }
+		
+        this.pettleHue = Math.round(tb.rnd(360)); // set the pettleHue, any random Hue is fine like stemColor this is only cosmetic
+        this.pettleLightness = luck; // pettle lightness is based on luck, better luck will mean brighter colors.
+		this.offset=tb.rnd(3.14); // the offset is used to offset the rotation of the flower so they do not all look the same
+		this.pettleCount=Math.round(tb.rnd(pettleRange[0],pettleRange[1])); // pettleCount is also just to help keep the flowers from being boring.
+    };
+
+   /*
+         The drawStem function is used to animate, and draw the flowers.
+   */
+    var drawStem = function (drawToInstance, flowerIndex) {
+        var fl = flowers[flowerIndex];
+        con.strokeStyle = fl.stemColor;
+        con.save();
+        con.lineWidth = 5;
+        if (fl.nectar < 25) {
+            con.globalAlpha = tb.per(fl.nectar, 25) / 100;
+
+        } else {
+            con.globalAlpha = 1;
+        };
+
+
+
+        con.beginPath();
+        con.moveTo(fl.x + fl.flowerSize, 500);
+        for (var i = 0; i != drawToInstance + 1; i++) {
+            var yStep = ((500 - fl.y - fl.flowerSize) / 50);
+            if (i <= 24) {
+                var d = i;
+            } else {
+                var d = (50 - i);
+            }
+
+            if (fl.x <= 250) {
+                var x = fl.x + fl.flowerSize - (d * fl.stemXRate * i);
+            } else {
+                var x = fl.x + fl.flowerSize + (d * fl.stemXRate * i);
+            };
+            var y = 500 - i * yStep;
+			
+            con.lineTo(x, y);
+			
+        };
+       con.stroke();
+
+        
+
+        var ic = 'rgb(' + Math.round(fl.nectar) + ',' + Math.round(fl.nectar) + ',0)';
+        //var pc = tb.hue(fl.pettleHue,(tb.per(fl.nectar,500)*2.55)*1.27);
+        //var pc = 'hsl('+fl.pettleHue+','+Math.round(tb.per(fl.nectar,500)+'%,50%)';
+        var pc = '#ffffff';
+        var pc = 'hsl(' + (fl.pettleHue * 30) + ',' + Math.round(tb.per(fl.nectar, 500)) + '%,' + fl.pettleLightness + '%)';
+        if (drawToInstance == 50) {
+
+            drawFlower(fl.x + fl.flowerSize, fl.y + fl.flowerSize, fl.flowerSize * 3, fl.pettleCount, ic, pc,fl.offset,flowerSmoothness);
+        } else {
+            drawFlower(x, y, (fl.flowerSize * 3) * (drawToInstance / 50), fl.pettleCount, ic, pc,fl.offset,flowerSmoothness);
+        }
+        con.restore();
+    };
+
+    /*
+	     The draw Flower function,
+		 this function just draws a flower, it does not animate the growth of the stem and flower in its entirety, for that look at drawStem
+	*/
+    var drawFlower = function (x, y, radius, pettles, innerFlowerColor, pettleColor,offset, smoothness) {
+	    if(offset==undefined)var offset = tb.rnd(0,3.14);
+        con.beginPath();
+        con.lineWidth = 2;
+        con.moveTo(x, y);
+		//pettles = 3;
+        
+		var minPoints = pettles * 2; // minPoints is the minimum amount of points that will be needed to draw the flower
+		/* 
+		     smoothness is the number of points that will be used for each half of a pettle, 
+			 the higher the smoothness the more points there will be therefore you will have smoother pettles
+             however it will cost more CPU overhead.
+			 
+			 drawing a 8 pettle flower will end up beging a minamum of 16 points, witch would just basicly give you 8 lines
+			 ratter then pettles. however a smoothness of 2 would give you  (8*2)*2 = 32 points witch would be 4 points
+			 per pettle. A smoothness of 8 would give you (8*2)*8 = 128 points 16 points per pettle, witch would give you smoother
+			 pettles at an exspence of overhead.
+			 
+			 although it can be set as low as 1, it should be as low as 2 if performance is of concern.
+			 
+			 maybe smoothness should be an augument that could be set in an options menu
+	     */
+		if(!smoothness) var smoothness = 4; 
+		
+        var points = minPoints*smoothness;  //  number of points per flower
+        var angleRate = Math.PI * 2 / points; // the number or radians to move per point
+        var perPettle = points / pettles;  // the number of points for each pettle (an 4 pettle flower with a smoothness of 2 would be (16/4=4))
+        var innerRadius = radius / 3;
+        radius = radius * 2 / perPettle;  // ajust the radius? I may have to rethink this.
+        var radUp = true;  // a boolean meaning if the radical value in the polar graph should go up or down
+		
+		
+		/* 
+		     draw the flower
+			 start off by setting the current polarAngle to the given offset, this will help make each flower look different
+		*/
+        for (var polarAngle = offset, radical = 0; polarAngle < Math.PI * 2+offset; polarAngle += angleRate) {
+            con.lineTo(x + Math.sin(polarAngle) * radical * radius, y + Math.cos(polarAngle) * radical * radius);
+            radUp ? radical += 1 : radical -= 1;
+            if (radical >= perPettle / 2) {
+                radUp = !radUp;
+            };
+            if (radical <= 0) {
+                radUp = !radUp;
+            };
+        };
+        con.closePath();
+        con.strokeStyle = '#000000';
+        con.stroke();
+        con.fillStyle = pettleColor; //tb.hue(Math.round(tb.rnd(11)),tb.rnd(32,127.5));
+        con.fill();
+
+        con.strokeStyle = '#000000';
+        con.beginPath();
+
+        con.arc(x, y, innerRadius, 0, 6.28);
+        con.closePath();
+        con.stroke();
+        con.fillStyle = innerFlowerColor;
+        con.fill();
+    };
+
+
+
+    var cls=function(){
+	  var bg = con.createLinearGradient(0, 500, 0, 0);
+      bg.addColorStop(0, '#00ff80');
+      bg.addColorStop(0.75, '#0000ff');
+      con.fillStyle = bg;
+      con.fillRect(0, 0, 500, 500);
+	};
+    var state = {
+	    
+	    maxMenuFlowers:20,menuFlowers:[], menuState:0,menuFlowerRadian:0,
+	    menu: function(){
+		    cls();
+			if(state.menuFlowers.length < state.maxMenuFlowers){
+			     var i = state.menuFlowers.length;
+			     state.menuFlowers[i]={};
+				 var mf=state.menuFlowers[i];
+				 mf.size=tb.rnd(75)+25;
+				 mf.x = Math.round(tb.rnd(mf.size/2,500-(mf.size/2)));
+				 mf.y = Math.round(tb.rnd(mf.size/2,500-(mf.size/2)));
+				 mf.pettleColor='hsl('+Math.round(tb.rnd(360))+',100%,'+Math.round(tb.rnd(50,100))+'%)';
+				 mf.offset=tb.rnd(3.14);
+				 mf.pettleCount=Math.round(tb.rnd(pettleRange[0],pettleRange[1]))
+				 //alert(state.menuFlowers[i].x)
+				 //alert(state.menuFlowers.length)
+			
+			}else{
+			     var i = state.maxMenuFlowers;
+			};
+			
+			// draw the menu flowers
+			for(var i=0;i!=state.menuFlowers.length;i++){
+			     state.menuFlowers[i];
+				 var mf=state.menuFlowers[i];
+				 
+			     drawFlower(mf.x,mf.y,mf.size,mf.pettleCount,'#ffff00',mf.pettleColor, mf.offset,flowerSmoothness);
+				 //drawFlower(250,250,mf.size,mf.pettleCount,'#ffff00',mf.pettleColor, mf.offset,8);
+			};
+			
+			
+			con.fillStyle='rgba(0,0,0,0.75)';
+			if(i!=state.maxMenuFlowers){
+			     var menuSize=Math.round(tb.per(i,state.maxMenuFlowers)*4);
+			     var menuHalf=Math.round(menuSize/2);
+			     con.fillRect(250-menuHalf,250-menuHalf,menuSize,menuSize);
+			}else{
+			     con.strokeStyle='#ffffff';
+			     con.fillRect(50,50,400,400); // draw menu background
+				 con.lineWidth=4;
+				 con.strokeRect(50,50,400,400);
+				 
+				 con.fillStyle='#ff0000'; // draw play new game button
+				 con.fillRect(100,200,300,50);
+				 con.strokeRect(100,200,300,50);
+				 
+				 con.fillStyle='#ffffff'; // draw game Title
+				 con.font='80px arial';
+				 con.textAlign='center';
+				 con.fillText('bFly',250,70);
+				 
+				 con.font='40px arial'; // draw new game button lable
+				 con.fillText('new game',250,200);
+				 
+				 con.font='15px arial'; // draw how to play
+				 con.fillText('How to Play:',250,260);
+				 disp(150,350,true);
+				 
+				 con.strokeStyle='#ffffff';
+				 con.font='12px courier';
+				 
+				 con.beginPath(); // point to nectar
+				     con.moveTo(115,330);
+					 con.lineTo(100,300);
+				 con.closePath()
+				 con.stroke();
+				 
+				 con.beginPath(); // point to luck
+				     con.moveTo(150,335);
+					 con.lineTo(150,290);
+				 con.closePath()
+				 con.stroke();
+				 
+				 con.beginPath(); // point time to luck change
+				     con.moveTo(135,365);
+					 con.lineTo(160,400);
+				 con.closePath()
+				 con.stroke();
+				 
+				 con.fillStyle='#ffffff';
+				 con.fillText('Use the W,A,D keys, or touch, to move Mr BtterFly. Try your best to keep your nectar bar from fully depleating, by gating Nectar from flowers. ', 250,250)
+				 con.fillText('Nectar',100,288);
+				 con.fillText('Luck',150,278);
+				 con.fillText('Time to luck change',160,400);
+				 
+			     if(tb.boundingBox(pointer[0],pointer[1],1,1,100,200,300,50)){   // if a mouse cursor hovers the new game button animate a flower
+				     drawFlower(100,200,40,7,'#ffff00','#ffffff',state.menuFlowerRadian,2);
+					 state.menuFlowerRadian+=0.05;
+					 if(state.menuFlowerRadian >= Math.PI*2) state.menuFlowerRadian-=Math.PI*2;
+				 }
+			}
+			
+			
+		
+			/*
+			if(state.x < 250){
+			state.x+=5;
+			}
+			*/
+			
+			//if(keys[32] && state.menuFlowers.length==state.maxMenuFlowers){
+			if(state.menuFlowers.length==state.maxMenuFlowers && (pressed || keys[32])){
+			     if(tb.boundingBox(pointer[0],pointer[1],1,1,100,200,300,50) || keys[32]){
+			     state.menuFlowers=[];
+			     newGame();
+			     currentState='game';
+				 };
+			};
+		},
+        game: function () {
+           var st=new Date();
+            cls();
+
+            if (keys[87] /*|| pointer[1] < fly.y*/) { // if W key is pressed fly up
+                if (fly.dy > -5) fly.dy -= 0.25;
+                fly.nectar -= 0.5;
+                if (new Date() - fly.ani.last >= fly.ani.rate * 0.25) {
+                    fly.ani.cell++;
+                    fly.ani.last = new Date();
+                    if (fly.ani.cell == 2) fly.ani.cell = 0;
+                };
+            } else { // if W is not pressed then gravity begins to win.
+                if (fly.dy < 5) fly.dy += 0.25;
+            };
+
+
+            if (keys[65] || keys[68] /*|| pointer[0]!=fly.x*/) { // if A or D key is pressed
+                fly.nectar -= 0.5;
+                if (keys[65] /*|| pointer[0] < fly.x*/) { // if A start going left
+                    if (fly.dx > -5) fly.dx -= 0.25;
+                };
+                if (keys[68] /*|| pointer[0] > fly.x */) { // if D start going right
+                    if (fly.dx < 5) fly.dx += 0.25;
+                };
+            } else { // else you loose your horizontal momentum
+                if (fly.dx > 0) fly.dx -= 0.25;
+                if (fly.dx < 0) fly.dx += 0.25;
+            };
+
+
+            fly.x += fly.dx; // apply deltaX and deltaY to current x and y values
+            fly.y += fly.dy;
+
+            if (fly.x < 0) fly.x = 0; // check x and y boundaries
+            if (fly.x > 450) fly.x = 450;
+            if (fly.y > 450) fly.y = 450;
+            if (fly.y < 0) fly.y = 0;
+
+            // if flowers array has not reached max flowers, and it's time for a chance for a new flower to grow...
+			 if(new Date() - lastRoll >= rollDelay){
+			     lastRoll = new Date(); // set last roll time to now
+                 if (flowers.length < maxFlowers) {
+                     
+                     var roll = tb.rnd(100); // do a roll
+                     if (roll <= luck) { // if roll is in players favor...
+                         var i = flowers.length;
+                         flowers[i] = new flower(i); // generate a new flower
+                     };
+                 };
+			 };
+
+            // loop thru flowers array
+            for (var f = 0; f != flowers.length; f++) {
+                var i = flowers[f];
+                if (i.grown) { // if the flower is fully grown
+                    if (tb.boundingBox(fly.x, fly.y + 30, 20, 20, i.x, i.y, i.flowerSize * 2, i.flowerSize * 2)) { // if the fly collides with the flower
+                        if (i.nectar >= 20) {
+                            fly.nectar += 20 * 0.1;
+                            i.nectar -= 20;
+							fly.score+=20;
+                        } else {
+                            fly.nectar += i.nectar;
+							fly.score+=Math.floor(i.nectar);
+                            i.nectar = 0;
+                        };
+                        if (fly.nectar > fly.maxNectar) fly.nectar = fly.maxNectar;  // the fly can only have so much nectar
+                    } else {
+                        i.nectar -= 0.25;
+                        if (i.nectar < 25) {
+                            if (i.y < 480) {
+                                i.y++;
+                            };
+                        };
+                    };
+                    if (i.nectar < 0) i.nectar = 0;
+                } else { // else if the flower is not grown
+                    if (i.growState < 50) {
+                         i.growState++;
+                    } else {
+                         i.grown = !0;
+                    };
+                };
+
+                // flower size based on nectar?
+                //i.flowerSize = i.nectar * 0.05;
+
+                // draw the flower in its current state
+                drawStem(i.growState, f);
+
+                if (i.nectar <= 0) {
+                    killList[killList.length] = f;
+                };
+            }; // end loop threw flowers array;
+
+
+            if (killList.length > 0) {
+                for (var kill = killList.length - 1; kill != -1; kill--) {
+                    flowers.splice(killList[kill], 1);
+                };
+                killList = [];
+				lastRoll = new Date(); // set last roll time to now
+            };
+            con.drawImage(sheet, fly.ani.cell * 16, 0, 16, 15, fly.x, fly.y, 50, 50);
+
+
+            if (new Date() - lastLuckChange >= 30000) { // if it is time for luck to change
+
+                luck = Math.round(tb.rnd(fly.luck[1] - fly.luck[0])) + fly.luck[0];
+				if(fly.luck[0] > 10){
+				  fly.luck[0]-=5;
+				  fly.luck[1]-=5;
+				}
+                //rollDelay=2500-luck*20;
+                lastLuckChange = new Date();
+            };
+            if (new Date() - fly.ani.last >= fly.ani.rate) {
+                fly.ani.cell++;
+                fly.ani.last = new Date();
+                if (fly.ani.cell == 2) fly.ani.cell = 0;
+            };
+
+            if (fly.y == 450 || fly.nectar <= 0) { // check if the player lost.
+                // if the player lost...
+                fly.nectar = 0;
+                //clearInterval(t);
+				currentState='lostGame';
+            };
+            disp();
+
+            // frame counter, game seems to stay at 12FPS on my Asus Intel Atom N570 EEE-PC
+			
+            //out(FPS + 'FPS')
+            FC++;
+            if (new Date() - lastFrameCount >= 1000) {
+                FPS = FC;
+                FC = 0;
+                lastFrameCount = new Date();
+            };
+            
+			
+			var et=new Date();
+			out('frame tick:' +Number(et-st)+'ms, FPS:'+FPS);
+			
+				
+        }, // end game
+		
+		
+		
+		/*State when game is over*/
+		lostGame:function(){
+		    //cls();
+			if(!gameOver){
+		         con.fillStyle='rgba(0,0,0,0.8)';
+				 con.strokeStyle='#ffffff';
+				 con.lineWidth=4;
+		         con.fillRect(125,125,250,250);
+				 con.strokeRect(125,125,250,250);
+				 
+				 con.fillStyle='#ffffff';
+				 con.font='40px arial';
+				 var mess='game over'
+				 //alert(con.textMetricts(mess).width)
+				 con.textAlign='center';
+		         con.fillText(mess,250,125);
+				 
+				 var mess = tb.breakToLines('Oh no it looks as though mr butterFly could not keep up with its futial strugle\, how sad.',7,250);
+				 var y = tb.printStringArrayToContext(mess, con, 15,250,180);
+				 var now=new Date();
+				 con.fillText('your score: '+fly.score+', time: '+(now-gameTimeStart),250,y);
+				 con.fillText('click or press to continue',250,y+40);
+				 gameOver=!0;
+			};
+		    if(keys[32] || pressed){
+			    newGame();
+			    currentState='menu';
+	        };
+		  
+		}
+    }
+
+
+    
+    var main = function () {
+	     var lt=new Date();
+	     var thread=function(){
+             if(new Date()-lt >= 1000/20){
+                 state[currentState]();
+                 lt=new Date();
+             };
+			 requestAnimFrame(thread);  // requestAnimFrame does seem to work better then var t=setTimeout(thread,1000/frameRate)requestAnimFrame(thread);  // requestAnimFrame does seem to work better then var t=setTimeout(thread,1000/frameRate)
+			 //var t = setTimeout(main, 1000 / 12);
+		 };
+		thread();
+        //state[currentState]();
+        
+        
+    };
+
+
+    //con.font='15px courier';
+    //con.fillText('loading tile sheet, or something went wrong.',10,50); 
+	/*
+	     startApp function 
+		 this is called first after a successful test for the canvas context
+		 it's mostly just a very crude resource loader for the games single sprite sheet
+	*/
+    var startApp=function(){
+	     con.textBaseline='top';  // set the context text baseline to top
+	     con.fillText('loading...',0,0);
+         sheet.src = 'img/fly_32_1.png';
+         sheet.onload = function () { // when the sheet loads
+             main();  // if the sheet is loaded run main thread and start up the game.
+         };
+	};
+	
+	/* set event listeners */
+	global.addEventListener('load',function(e){  // add onload event handler to global (window) this is where it all begins after the anonymous function is called
+	     if(tb.checkCanvas()){  // check for the canvas context
+		     alert(tb.distance(2,1,6,3	))
+		     startApp(); // if we have a context, start the app
+		 }else{
+		     document.write('your browser does not seem to support canvas, sorry.') //else inform the user of the bad news.
+		 };
+	});
+	global.addEventListener('keydown',function(e){ // if you find a key has been pressed down
+	     if (e.keyCode == 32) e.preventDefault(); // don't scroll if the space bar is pressed
+	     keys[e.keyCode]=!0; // set it's boolean true
+	});
+	global.addEventListener('keyup',function(e){ // if a key is released
+	     keys[e.keyCode]=!1; // set its boolean false
+	});
+	conDom.addEventListener('mousemove', function(e){
+	     /*
+		 works fine if you do not scale, and position without any nested elements other then body
+	     pointer[0]=e.clientX-conDom.offsetLeft;
+		 pointer[1]=e.clientY-conDom.offsetTop;
+		 */
+		 
+		 // if you are going to scale full screen you might want to do something like this
+		 pointer[0]=Math.floor(tb.per(e.clientX,window.innerWidth)*5);
+		 pointer[1]=Math.floor(tb.per(e.clientY,window.innerHeight)*5);
+	});
+	conDom.addEventListener('mousedown', function(e){
+	     pressed=!0;
+	});
+	conDom.addEventListener('mouseup', function(e){
+	     pressed=!1;
+	});
+	
+	// add basic support for touch devices, this may need allot of work.
+	conDom.addEventListener('touchstart', function(e){
+	     e.preventDefault();
+		 pressed=!0;
+	     keys[32]=!1,keys[87]=!1,keys[65]=!1, keys[68]=!1;
+    });
+    conDom.addEventListener('touchend', function(e){
+	     e.preventDefault();
+		 pressed=!1;
+		 pointer[0]=-1;
+		 pointer[1]=-1;
+	     keys[32]=!1,keys[87]=!1,keys[65]=!1, keys[68]=!1;
+    });
+    conDom.addEventListener('touchmove', function(e){
+	     e.preventDefault();
+         keys[32]=!1,keys[87]=!1,keys[65]=!1, keys[68]=!1;
+		 
+		 if(currentState!='game'){
+		     keys[32]=!0;
+		 };
+         var touch = e.touches[0];
+		 
+		 // should be good if scaled 100%.
+         pointer[0] = Math.round(tb.per(touch.clientX,window.innerWidth))*5,
+		 pointer[1] = Math.round(tb.per(touch.clientY,window.innerHeight))*5;
+		 
+         if(pointer[1] < fly.y){
+		     keys[87]=!0;
+		 };
+		 if(pointer[0] > fly.x){
+		   keys[68]=!0;
+		 };
+		 if(pointer[0] < fly.x){
+		   keys[65]=!0;
+		 };
+    });
+})(window);
+  </script>
+</body>
+</html>

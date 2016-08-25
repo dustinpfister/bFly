@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+</head>
+<body style="margin:0px;padding:0px;">
+  <!--<div id="screen" style="position:relative; background:#8f8f8f; width:40%; height:20%;">-->
+    
+    <canvas id="game" width="700" height="500" style="position:absolute;width:100%;height:100%;" ></canvas>
+  <!--</div>-->
+  <!--<div id="out"></div>-->
+  <script type="text/javascript" >
+    var tb={};
+    tb.hue=function(hue,sat){
+  if(hue==undefined) var hue=1;
+  if(sat==undefined) var sat=127.5;  
+  var hueValues=[
+    [2,0,0,'red'], // red
+    [2,1,0,'orange'], // orange
+    [2,2,0,'yellow'], // yellow
+    [1,2,0,'chartreuse'], // chartreuse
+    [0,2,0,'green'], // green
+    [0,2,1,'spring'], // spring
+    [0,2,2,'cyan'], // cyan
+    [0,1,2,'azure'], // azure
+    [0,0,2,'blue'], // blue
+    [1,0,2,'violet'], // violet
+    [2,0,2,'magenta'], // magenta
+    [2,0,1,'rose']  // rose
+  ];
+  if(typeof hue == 'number'){
+    if(hue < 0) hue=0; // make sure range is valid.
+    if(hue > 11) hue=11;
+  }else{
+    if(typeof hue == 'string'){
+      for(var i=0; i!=12;i++){ // if a string check if it is a hue name
+        if(hue==hueValues[i][3]){
+          hue=i;	
+          break;
+        };
+      };
+      if(i==12){hue=0;}
+    }else{
+      hue=0; // if a bool, object, ect set to red;
+    };
+  };
+  if(typeof hue == 'number'){
+    if(sat < 0.5) sat=0.5;
+    if(sat > 127.5) sat=127.5;
+  }else{
+    sat=127.5;
+  };  
+  
+  var h = hueValues[hue];
+  var r = Math.round(h[0]*sat);
+  var g = Math.round(h[1]*sat);
+  var b = Math.round(h[2]*sat);
+  return 'rgb('+r+','+g+','+b+')';
+};
+
+    tb.bb=function(x1,y1,w1,h1,x2,y2,w2,h2){
+      var o=!1;
+      if( (x1 > x2+w2) || (x1 +w1 < x2) || (y1+h1 < y2) || (y1 > y2+h2) ){
+        o=!1;
+      }else{
+        o=!0;
+      };
+      return o;
+    };
+    tb.rnd = function (low, high) {
+      if (!high) {
+        return Math.random() * low;
+      }else{
+        return Math.random() * (high - low) + low;
+      };
+    };
+    tb.g=function(id){
+      return document.getElementById(id);
+    };
+    tb.per=function(low, high) {
+      return low*100/high;
+    };
+    tb.checkCanvas=function() {
+      var el = document.createElement('canvas');
+      return !!el.getContext('2d') ? !0 : !1;
+    };
+    
+    
+    var keys=[];
+    
+    
+    var app=function(){
+      var fly={
+        x:225,y:225,
+        level:1,
+        nectar:500,
+        maxNectar:1500,
+        ani:{
+          cell:0,
+          rate:300,
+          last:new Date()
+         }
+      };
+      var flowers=[],flowerChance=100,maxFlowers=15,killList=[],gameOver=!0,t=null;
+      var luck = 100,lastTime=new Date();
+      var lastRoll=new Date(), rollDelay=2500-luck*20;
+      var con = tb.g('game').getContext('2d');
+      var sheet=new Image();
+      
+      for(var k=0,str=''; k!=256;k++){
+          keys[k]=!1;
+      };
+      var disp=function(){
+        var c=con;
+        c.fillStyle='#000000';
+        c.fillRect(500,0,200,500);
+        c.font='15px monospace';
+        c.fillStyle='#8f8f8f';
+        c.fillText('Nectar',525,24);
+        c.fillText('Luck',525,74);
+        c.fillRect(525,25,150,25);
+        c.fillRect(525,75,150,25);
+        c.fillStyle='#ff0000';
+        c.fillRect(525,25,Math.round(tb.per(fly.nectar,fly.maxNectar)*1.5),25);
+        c.fillRect(525,75,Math.round(tb.per(luck,100))*1.5,25);
+      };
+      
+      
+      var flower=function(){
+        this.x=Math.round(tb.rnd(380)+60);
+        this.y=Math.round(tb.rnd(280)+110);
+        this.flowerSize=Math.round(tb.rnd(5,20));
+        this.nectar=Math.round(tb.rnd(55)+(luck*2));
+        this.drawn=!1;
+        this.drawInstance=0;
+        this.stemColor='rgb(0,'+Math.round(tb.rnd(127)+127)+',0)';
+        if(this.x <=250){
+          this.stemXRate=tb.rnd(this.x)/25/25;
+        }else{
+          this.stemXRate=tb.rnd(480-this.x)/25/25;
+        }
+        this.pettleHue=Math.round(tb.rnd(11));
+        //tb.hue(Math.round(tb.rnd(11)),tb.rnd(60,127.5));
+      };
+      var drawStem=function(drawToInstance,flowerIndex){
+        var fl=flowers[flowerIndex];
+        con.strokeStyle=fl.stemColor;
+        con.save();
+        con.lineWidth=5;
+        if(fl.nectar < 25){
+          con.globalAlpha=tb.per(fl.nectar,25)/100;
+          
+        }else{
+          con.globalAlpha=1;
+        };
+        con.beginPath();
+        con.moveTo(fl.x+fl.flowerSize,500);
+        for(var i =0; i!= drawToInstance+1;i++){
+          var yStep = ((500-fl.y-fl.flowerSize)/50);
+          if(i <= 24){
+            var d=i;
+          }else{
+            var d=(50-i);
+          }
+          
+          if(fl.x <=250){
+            con.lineTo(fl.x+fl.flowerSize-(d*fl.stemXRate*i),500-i*yStep);
+          }else{
+            con.lineTo(fl.x+fl.flowerSize+(d*fl.stemXRate*i),500-i*yStep);
+          };
+          
+        };
+        
+         
+        con.stroke();
+        if(drawToInstance==50){
+        /*  con.fillStyle='rgb('+Math.round(fl.nectar)+','+Math.round(fl.nectar)+',0)';
+          con.beginPath();
+          con.arc(fl.x+fl.flowerSize,fl.y+fl.flowerSize, fl.flowerSize, 0, 6.28);
+          con.closePath();
+          con.stroke();
+          con.fill();*/
+          var ic = 'rgb('+Math.round(fl.nectar)+','+Math.round(fl.nectar)+',0)';
+          drawFlower(fl.x+fl.flowerSize,fl.y+fl.flowerSize,fl.flowerSize*3,7,ic,tb.hue(fl.pettleHue,tb.per(fl.nectar,255)*1.27));
+        };
+        con.restore();
+      };
+      
+      
+      var drawFlower=function(x,y,radius,pettles,innerFlowerColor,pettleColor){
+        con.beginPath();
+        con.lineWidth=5;
+          con.moveTo(x,y);
+          //var pettles=8;
+          var smoothness=1;
+          var points=(pettles*2*pettles)*smoothness;
+          var angleRate=Math.PI*2/points;
+          var perPettle=points/pettles;
+          var innerRadius=radius/3;
+          radius=radius*2/perPettle;
+          var radUp=true;
+          for(var polarAngle=0,radical=0; polarAngle < Math.PI*2 ; polarAngle+=angleRate ){
+            con.lineTo(x+Math.sin(polarAngle)*radical*radius,y+Math.cos(polarAngle)*radical*radius);
+            
+            radUp ? radical+=1:radical-=1;
+            
+            if(radical>=perPettle/2){
+              radUp=!radUp;
+            };
+            if(radical<=0){
+              radUp=!radUp;
+            };
+          };
+        con.closePath();
+        con.strokeStyle='#000000';
+        con.stroke();
+        con.fillStyle=pettleColor;//tb.hue(Math.round(tb.rnd(11)),tb.rnd(32,127.5));
+        con.fill();
+        
+        con.strokeStyle='#000000';
+        con.beginPath();
+        
+        con.arc(x,y,innerRadius,0,6.28);
+        con.closePath();
+        con.stroke();
+        con.fillStyle=innerFlowerColor;
+        con.fill();
+      };      
+      
+      var thread=function(){
+        con.fillStyle='#ffffff';
+        con.fillRect(0,0,500,500);
+        if(keys[87]){
+          fly.y-=5;
+          if(fly.y < 0) fly.y=0;
+          fly.nectar-=1;
+          if(new Date()-fly.ani.last >= fly.ani.rate*0.25){
+            fly.ani.cell++;
+            fly.ani.last=new Date();
+            if(fly.ani.cell==2)fly.ani.cell=0;
+          };
+        }else{
+          if(fly.y < 450){
+             fly.y+=1.75;
+          }else{fly.y=450;}   
+        };
+        if(fly.y==450 || fly.nectar<=0){
+          fly.nectar=0;
+          gameOver=!0;
+          clearInterval(t);
+        };
+        if(keys[65]) fly.x-=1.75;
+        if(keys[68]) fly.x+=1.75;
+        if(fly.x < 0) fly.x=0;
+        if(fly.x > 450) fly.x=450; 
+        
+        // if flowers array has not reached max flowers, and it's time for a chance for a new flower to grow...
+        if(flowers.length < maxFlowers && new Date()-lastRoll >=rollDelay){
+            lastRoll=new Date(); // set last roll time to now
+            var roll = tb.rnd(100); // do a roll
+            if(roll <= flowerChance){  // if roll is in players favor...
+              var i = flowers.length;  
+              flowers[i]=new flower(i); // generate a new flower
+            };
+        };
+        
+        // loop thru flowers array
+        for(var f=0; f!=flowers.length;f++){
+          var i=flowers[f];
+          if(i.drawn){
+            if(tb.bb(fly.x,fly.y+30,20,20,i.x,i.y,i.flowerSize*2,i.flowerSize*2)){
+              if(i.nectar >=20){
+                fly.nectar+=20*0.1;
+                i.nectar-=20;
+              }else{
+                fly.nectar+=i.nectar;
+                i.nectar=0;
+              };
+              if(fly.nectar > fly.maxNectar) fly.nectar = fly.maxNectar;
+            }else{
+              i.nectar-=0.25;
+              if(i.nectar < 25){
+                if(i.y < 480){
+                  i.y++;
+                };
+              };
+            };
+            if(i.nectar < 0)i.nectar=0;
+          }else{
+            if(i.drawInstance < 50){
+              i.drawInstance++;
+            }else{
+              i.drawn=!0;
+            };
+          };
+          
+          drawStem(i.drawInstance,f);
+          
+          if(i.nectar <=0){
+            killList[killList.length]=f;
+          };
+          
+        };
+        if(killList.length > 0){
+          for(var kill=killList.length-1; kill!=-1;kill--){
+            flowers.splice(killList[kill],1);
+          };
+          killList=[];
+        };
+        con.drawImage(sheet,fly.ani.cell*16,0,16,15,fly.x,fly.y,50,50);
+        if(new Date()-lastTime >=1000*30){
+          luck = Math.round(tb.rnd(90))+10;
+          flowerChance=luck;
+          rollDelay=2500-luck*20;
+          lastTime=new Date();
+        };
+        if(new Date()-fly.ani.last >= fly.ani.rate){
+           fly.ani.cell++;
+           fly.ani.last=new Date();
+           if(fly.ani.cell==2)fly.ani.cell=0;
+         };
+        disp();
+        fly.nectar-=0.25;
+      };
+      sheet.src='img/fly_32_1.png';
+      sheet.onload=function(){
+        t = setInterval(thread,100);
+      };
+      
+      
+      
+      
+      /*
+      for(var f=0; f!=80;f++){
+        var radius=Math.round(tb.rnd(10,100));
+        drawFlower(tb.rnd(0+radius,700-radius),tb.rnd(0+radius,500-radius),radius,Math.round(tb.rnd(4,12)));
+      };
+      */
+      
+    };
+    
+    window.onkeydown=function(e){
+      if(e.keyCode==32) e.preventDefault();
+      keys[e.keyCode]=!0;
+    };
+    window.onkeyup=function(e){
+      keys[e.keyCode]=!1;
+    };
+    window.onload=function(){
+      if(tb.checkCanvas()){
+        app();
+      }else{
+        document.write('the game requiers canvas support');
+      };
+    };
+  </script>
+</body>
+</html>

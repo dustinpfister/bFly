@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+</head>
+<body>
+  <div id="screen" style="position:relative; background:#8f8f8f; width:700px; height: 500px;">
+    <canvas id="game" width="700" height="500"></canvas>
+  </div>
+  <div id="out">hello world</div>
+  <script type="text/javascript" >
+    var tb={};
+    tb.bb=function(x1,y1,w1,h1,x2,y2,w2,h2){
+      var o=false;
+      if( (x1 > x2+w2) || (x1 +w1 < x2) || (y1+h1 < y2) || (y1 > y2+h2) ){
+        o=false;
+      }else{
+        o=true;
+      };
+      return o;
+    };
+    tb.g=function(id){
+      return document.getElementById(id);
+    };
+    tb.per=function(low, high) {
+      return low*100/high;
+    };
+    tb.checkCanvas=function() {
+      var el = document.createElement('canvas');
+      return !!el.getContext('2d') ? true : false;
+    };
+    var keys=[];
+    var app=function(){
+      var fly={
+        x:225,y:225,
+        level:1,
+        nectar:100,
+        maxNectar:1500,
+        ani:{
+          cell:0,
+          rate:300,
+          last:new Date()
+         }
+      };
+      var flowers=[],flowerChance=100,maxFlowers=15,killList=[],gameOver=false,t=null;
+      var luck = 100,lastTime=new Date();
+      var lastRoll=new Date(), rollDelay=2500-luck*20;
+      var con = tb.g('game').getContext('2d');
+      var sheet=new Image();
+      for(var k=0,str=''; k!=256;k++){
+          keys[k]=false;
+      };
+      var disp=function(){
+        var c=con;
+        c.fillStyle='#000000';
+        c.fillRect(500,0,200,500);
+        c.font='15px monospace';
+        c.fillStyle='#8f8f8f';
+        c.fillText('Nectar',525,24);
+        c.fillText('Luck',525,74);
+        c.fillRect(525,25,150,25);
+        c.fillRect(525,75,150,25);
+        c.fillStyle='#ffff00';
+        c.fillRect(525,25,Math.round(tb.per(fly.nectar,fly.maxNectar)*1.5),25);
+        c.fillRect(525,75,Math.round(tb.per(luck,100))*1.5,25);
+      };
+      var flower=function(){
+        this.x=Math.round(Math.random()*380+60);
+        this.y=Math.round(Math.random()*280+110);
+        this.nectar=Math.round(Math.random()*55+(luck*2));
+        this.drawn=false;
+        this.drawInstance=0;
+      };
+      var thread=function(){
+        con.fillStyle='#00af8f';
+        con.fillRect(0,0,500,500);
+        if(keys[87]){
+          fly.y-=5;
+          if(fly.y < 0) fly.y=0;
+          fly.nectar-=1;
+          if(new Date()-fly.ani.last >= fly.ani.rate*0.25){
+            fly.ani.cell++;
+            fly.ani.last=new Date();
+            if(fly.ani.cell==2)fly.ani.cell=0;
+          };
+        }else{
+          if(fly.y < 450){
+             fly.y+=1.75;
+          }else{fly.y=450;}   
+        };
+        if(fly.y==450 || fly.nectar<=0){
+          fly.nectar=0;
+          gameOver=true;
+          clearInterval(t);
+        };
+        if(keys[65]) fly.x-=1.75;
+        if(keys[68]) fly.x+=1.75;
+        if(fly.x < 0) fly.x=0;
+        if(fly.x > 450) fly.x=450; 
+        if(flowers.length < maxFlowers && new Date()-lastRoll >=rollDelay){
+            lastRoll=new Date();
+            var roll = Math.random()*100;
+            if(roll <= flowerChance){
+              var i = flowers.length;          
+              flowers[i]=new flower(i);
+            };
+        };
+        // loop thru flowers array
+        for(var f=0; f!=flowers.length;f++){
+          var i=flowers[f];
+          if(i.drawn){
+            if(tb.bb(fly.x,fly.y+30,20,20,i.x,i.y,20,20)){
+              if(i.nectar >=20){
+                fly.nectar+=20*0.1;
+                i.nectar-=20;
+              }else{
+                fly.nectar+=i.nectar;
+                i.nectar=0;
+              };
+              if(fly.nectar > fly.maxNectar) fly.nectar = fly.maxNectar;
+            }else{
+              i.nectar-=0.25;
+              if(i.nectar < 10){
+                if(i.y < 480){
+                  i.y++;
+                };
+              };
+            };
+            con.strokeStyle='#008000';
+            con.beginPath();
+            con.moveTo(i.x+10,500);
+            con.lineTo(i.x+10,i.y+10);
+            con.closePath();
+            con.stroke();
+            con.fillStyle='rgb('+Math.round(i.nectar)+','+Math.round(i.nectar)+',0)';
+            con.fillRect(i.x,i.y,20,20);
+          }else{
+              con.strokeStyle='#008000';
+              con.beginPath();
+              con.moveTo(i.x+10,500);
+              con.lineTo(i.x+10,500-i.drawInstance*((500-i.y)/50));
+              con.closePath();
+              con.stroke();
+            if(i.drawInstance < 50){
+              
+              //con.fillStyle='rgb('+Math.round(i.nectar)+','+Math.round(i.nectar)+',0)';
+              //con.fillRect(i.x,i.y,20,20);
+              i.drawInstance++;
+            }else{
+              i.drawn=true;
+            };
+          };
+          if(i.nectar <=0){
+            killList[killList.length]=f;
+          };
+          
+        };
+        if(killList.length > 0){
+          for(var kill=killList.length-1; kill!=-1;kill--){
+            flowers.splice(killList[kill],1);
+          };
+          killList=[];
+        };
+        con.drawImage(sheet,fly.ani.cell*48,0,45,43,fly.x,fly.y,50,50);
+        if(new Date()-lastTime >=1000*30){
+          luck = Math.round(Math.random()*90)+10;
+          flowerChance=luck;
+          rollDelay=2500-luck*20;
+          lastTime=new Date();
+        };
+        if(new Date()-fly.ani.last >= fly.ani.rate){
+           fly.ani.cell++;
+           fly.ani.last=new Date();
+           if(fly.ani.cell==2)fly.ani.cell=0;
+         };
+        disp();
+        fly.nectar-=0.25;
+      };
+      sheet.src='img/fly.png';
+      sheet.onload=function(){
+        t = setInterval(thread,100);
+      };
+    };
+    window.onkeydown=function(e){
+      if(e.keyCode==32) e.preventDefault();
+      keys[e.keyCode]=true;
+    };
+    window.onkeyup=function(e){
+      keys[e.keyCode]=false;
+    };
+    window.onload=function(){
+      if(tb.checkCanvas()){
+        app();
+      }else{
+        document.write('the game requiers canvas support');
+      };
+    };
+  </script>
+</body>
+</html>

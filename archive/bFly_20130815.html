@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title></title>
+</head>
+<body>
+  <div id="screen" style="position:relative; background:#000000; width:500px; height: 500px;">
+    <div id="player" style="position:absolute; background:#ff0000;width:20px; height:20px;z-Index:11;"></div>
+  </div>
+  <div id="out">hello world</div>
+  <script type="text/javascript" >
+    var tb={};
+    tb.boundingBox=function(x1,y1,w1,h1,x2,y2,w2,h2){
+      var overlap=false;
+      if( (x1 > x2+w2) || (x1 +w1 < x2) || (y1+h1 < y2) || (y1 > y2+h2) ){
+        overlap=false;
+      }else{
+        overlap=true;
+      };
+      return overlap;
+    };
+    tb.get=function(id){
+      return document.getElementById(id);
+    };
+    tb.append=function(what, where){
+      if(typeof what == 'string') what = tb.get(what);
+      if(typeof where == 'string') where = tb.get(where);
+      where.appendChild(what);
+    };
+    tb.per = function (low, high) {
+      return low * 100 / high;
+    };
+    
+    var keys=[];
+    var app=function(){
+      var bird={
+        x:240,y:480,
+        nectar:100
+      };
+      var flowers=[],flowerChance=5,maxFlowers=20,killList=[],gameOver=false,t=null;
+      for(var k=0,str=''; k!=256;k++){
+          keys[k]=false;
+      };
+      var printKeys=function(){
+        for(var k=0,str=''; k!=256;k++){
+          str+=k+':'+keys[k]+' , '
+        };
+        document.getElementById('out').innerHTML=str;
+      };
+      var show=function(){
+        tb.get('out').innerHTML=bird.nectar;
+      };
+      var disp=function(){
+        tb.get('nectarBar').style.width=tb.per(bird.nectar,bird.maxNectar)+'px'
+      };
+      var flower=function(index){
+        this.x=Math.round(Math.random()*380+60);
+        this.y=Math.round(Math.random()*280+110);
+        this.nectar=Math.round(Math.random()*230+25);
+        var fl = document.createElement('div');
+        tb.append(fl,'screen');
+        this.div=fl;
+        var n=fl.style;
+        n.position='absolute';
+        n.width='20px';
+        n.height='20px';
+        n.left=this.x+'px';
+        n.top=this.y+'px';
+        n.background='rgb('+this.nectar+','+this.nectar+',0)';
+      };
+      var thread=function(){
+        var el=document.getElementById('player');
+        if(keys[32]){
+         bird.y-=5;
+         bird.nectar-=1;
+         if(bird.nectar <=0){
+           bird.nectar=0;
+           gameOver=true;
+           clearInterval(t);
+         };
+         keys[32]=false;
+        }else{
+          if(bird.y < 480) bird.y++;
+        };
+        if(keys[65]) if(bird.x > 0) bird.x--;
+        if(keys[68]) if(bird.x < 480) bird.x++;
+        
+        if(flowers.length < maxFlowers){
+          var roll = Math.random()*100;
+          if(roll <= flowerChance){
+            var i = flowers.length;          
+            flowers[i]=new flower(i);
+          };
+        };
+        for(var f=0; f!=flowers.length;f++){
+          var i=flowers[f];
+          if(tb.boundingBox(bird.x,bird.y,20,20,i.x,i.y,20,20)){
+            
+            if(i.nectar >=20){
+              bird.nectar+=20*0.1;
+              i.nectar-=20;
+            }else{
+              bird.nectar+=i.nectar;
+              i.nectar=0;
+            }
+          }else{
+            i.nectar-=0.25;
+            if(i.nectar < 100){
+              if(i.y < 480){
+                i.y++;
+              };
+            }
+          };
+          if(i.nectar <=0){
+            killList[killList.length]=f;
+          };
+          i.div.style.background='rgb('+i.nectar+','+i.nectar+',0)';
+          i.div.style.top=i.y+'px';
+        };
+        if(killList.length > 0){
+          for(var kill=0; kill!=killList.length;kill++){
+            tb.get('screen').removeChild(flowers[killList[kill]].div);
+            flowers.splice(killList[kill],1);
+          };
+          killList=[];
+        };
+        el.style.left=bird.x+'px';
+        el.style.top=bird.y+'px';
+        show();
+      }
+      t = setInterval(thread,80);
+    };
+    window.onkeydown=function(e){
+      if(e.keyCode==32) e.preventDefault();
+      keys[e.keyCode]=true;
+    };
+    window.onkeyup=function(e){
+      keys[e.keyCode]=false;
+    };
+    window.onload=function(){
+      app();
+    };
+  </script>
+</body>
+</html>
