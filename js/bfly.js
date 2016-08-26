@@ -108,11 +108,11 @@ changes in 2014.03.21
     };
     newGame(); // set up a new Game, just to init the fly object
 
-    
-    var out = function(mess){
-    tb.g('out').innerHTML=mess;
+
+    var out = function (mess) {
+        tb.g('out').innerHTML = mess;
     };
-    
+
     /*
     disp render display function
     this function will be used to display information to the player
@@ -253,12 +253,11 @@ changes in 2014.03.21
 
         /* the game state function that updates the game model */
         game : function () {
-            var st=new Date();
+            var st = new Date();
             //cls();
 
             if (keys[87]/*|| pointer[1] < fly.y*/
-            )
-            { // if W key is pressed fly up
+            ) { // if W key is pressed fly up
                 if (fly.dy > -5)
                     fly.dy -= 0.25;
                 fly.nectar -= 0.5;
@@ -274,18 +273,15 @@ changes in 2014.03.21
             };
 
             if (keys[65] || keys[68]/*|| pointer[0]!=fly.x*/
-            )
-            { // if A or D key is pressed
+            ) { // if A or D key is pressed
                 fly.nectar -= 0.5;
                 if (keys[65]/*|| pointer[0] < fly.x*/
-                )
-                { // if A start going left
+                ) { // if A start going left
                     if (fly.dx > -5)
                         fly.dx -= 0.25;
                 };
                 if (keys[68]/*|| pointer[0] > fly.x */
-                )
-                { // if D start going right
+                ) { // if D start going right
                     if (fly.dx < 5)
                         fly.dx += 0.25;
                 };
@@ -411,27 +407,25 @@ changes in 2014.03.21
 
             // frame counter, game seems to stay at 12FPS on my Asus Intel Atom N570 EEE-PC
 
-            
-            var str='';
-            for(var i=0,len=flowers.length;i<len;i++){
-            str+=i+':'+flowers[i].render+' ,';
+
+            var str = '';
+            for (var i = 0, len = flowers.length; i < len; i++) {
+                str += i + ':' + flowers[i].render + ' ,';
             }
-            
+
             out(str);
-            
+
             out(FPS + 'FPS')
 
             FC++;
             if (new Date() - lastFrameCount >= 1000) {
-            FPS = FC;
-            FC = 0;
-            lastFrameCount = new Date();
+                FPS = FC;
+                FC = 0;
+                lastFrameCount = new Date();
             };
-             
 
-            var et=new Date();
-            out('frame tick:' +Number(et-st)+'ms, FPS:'+FPS);
-
+            var et = new Date();
+            out('frame tick:' + Number(et - st) + 'ms, FPS:' + FPS);
 
         }, // end game
 
@@ -877,6 +871,9 @@ changes in 2014.03.21
     });
 
     var ontouch = function (e) {
+
+        var box = e.target.getBoundingClientRect();
+
         e.preventDefault();
         keys[32] = !1,
         keys[87] = !1,
@@ -890,8 +887,11 @@ changes in 2014.03.21
         var touch = e.touches[0];
 
         // should be good if not fullscreen
-        pointer[0] = touch.clientX - conDom.offsetLeft;
-        pointer[1] = touch.clientY - conDom.offsetTop;
+        //pointer[0] = touch.clientX - conDom.offsetLeft;
+        //pointer[1] = touch.clientY - conDom.offsetTop;
+
+        pointer[0] = touch.clientX - box.left;
+        pointer[1] = touch.clientY - box.top;
 
         // should be good if scaled 100%.
         //pointer[0] = Math.round(tb.per(touch.clientX,window.innerWidth))*5,
@@ -906,6 +906,9 @@ changes in 2014.03.21
         if (pointer[0] < fly.x) {
             keys[65] = !0;
         };
+
+        console.log(pointer[0] + ',' + pointer[1]);
+
     };
 
     var attachEvents = function () {
