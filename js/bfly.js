@@ -1,3 +1,38 @@
+/*
+bFly v 2014.03.21 (Beta)
+Copyright 2013, 2014 Dustin Pfister
+dustin.pfister@gmail.com
+http://dustinpfister.weebly.com/
+
+I Dustin Pfister declare this software under the terms of the GNU GPL v3
+You should have received a copy of the licence terms, if not here is a link:
+
+http://www.gnu.org/licenses/gpl-3.0.txt
+
+Do not remove the above copyright notice! If you wish to make an
+alternate work based on this project add your name next to mine and release
+the work under the terms of the GNU GPL v3 or similar license. Do not sell
+this, or clam that you have made this unless your name appears above In the
+copyright declaration.
+
+Thank you ~Dustin
+
+change log from 2013.09.11 (js13kversion) is as follows:
+
+changes in 2014.03.20
+* changed the backdrop gradient to make it look different from the version submitted to js13kgames.com
+* started using my Acetate library to help improve performance by using layering.
+* started with around 25 FPS on my net book when frame rate capping is off, and there are 8 flowers rendering, 
+   this has been improved to as much as 42FPS. 
+* However now I have problems with the sheets being used by different instances of the flower class when a flower dies.
+   
+changes in 2014.03.21
+ * fixed the problem in 2014.03.20 where flowers would use a different canvas when a flower died
+ * set frame rate target to 30FPS
+ 
+ */
+
+
 /* begin the app*/
 (function (global) { // beginning of bFly 13k game object
 
@@ -5,6 +40,8 @@
     var conDom, // stores a reference to the canvas DOM objct
         con, // stores a reference to the canvas context
         sheet = new Image(), // the games one sprite sheet.
+		ace, // the Acetate Class Instance
+		activeFlowerSheets=[],
         currentState = 'start', // current state in the games state machine
         fly, // the fly object stores data of the players fly such as x,y, deltaX, deltaY, ect.
         flowers, // the flowers array, stores and array of objects made by the flower constructor 
@@ -19,9 +56,9 @@
         lastRoll, // stores a date object that represents the last time a roll for a new flower has occurred, if roll is <= luck then a new flower will bloom.
         rollDelay, // rollDelay is the amount of time that should pass between rolls, it should be set to a fixed value such as 1000, or perhaps change dynamicly based on luck
         lastLuckChange, // like lastRoll stores a Date object that is the last time the fly's luck has change
-        // FPS = 0,  // Frames Per Second (FPS counter)
-        //FC = 0, // Frame Count (FPS counter)
-        //lastFrameCount = new Date(), // last frame count (FPS counter)
+         FPS = 0,  // Frames Per Second (FPS counter)
+        FC = 0, // Frame Count (FPS counter)
+        lastFrameCount = new Date(), // last frame count (FPS counter)
         gameOver, // game over boolean
         //gameTimeStart,
         keys = [], // used to store key state boolean values
@@ -62,117 +99,47 @@
         score = 0;
         //gameTimeStart=new Date();
         gameOver = !1; // set the game over boolean to false
+		
+		// set all activeFlowerSheets to false
+		for(var f=0; f!=maxFlowers;f++){
+		    activeFlowerSheets[f] = false;
+		}
     };
     newGame(); // set up a new Game, just to init the fly object
 
+	/*
+	var out = function(mess){
+	    tb.g('out').innerHTML=mess;
+	};
+	*/
     /*  
 	     disp render display function 
 		 this function will be used to display information to the player
 	
 	*/
-    var disp = function (dispX, dispY, demo) {
-        if (!demo) var demo = false;
-        if (!dispX || !dispY) {
-            var dispX = 250,
-                dispY = 60; // position of display
-        };
-        /* 
-		 dispX sets the position of the nectar, and luck indicator bars
-		 dispX and dispY are the position of the concentric circles orgin
-         so then 50,50 would place it in the upper left corner
-         250,50 would be in the upper upper center.	 
-		 */
-        if (demo) {
-            var necBar = 1.25,
-                luckBar = 1.75,
-                changeTime = 0.30;
-        } else {
-            var necBar = tb.per(fly.nectar, fly.maxNectar) / 100 + 1, // determin the nectar bar length
-                luckBar = luck / 100 + 1, // find luck bar length
-                now = new Date(),
-                changeTime = tb.per(now - lastLuckChange, 30000) / 100;
-        };
-
-        var c = con; // reference to context
-
-        c.fillStyle = 'rgba(128,128,128,0.5)'; // set background color
-        c.strokeStyle = 'rgba(0,0,0,1)'; // set bar outline color
-        c.lineWidth = 2; // thicker then normal outline width
-
-        // draw nectar bar and luck bar background
-        c.beginPath();
-        c.arc(dispX, dispY, 50, Math.PI, Math.PI * 2);
-        c.arc(dispX, dispY, 30, Math.PI * 2, Math.PI, true);
-        c.closePath();
-        c.stroke();
-        c.fill(); // stroke and fill nectar bar background
-
-        // draw luck bar background
-        c.beginPath();
-        c.arc(dispX, dispY, 25, Math.PI, Math.PI * 2);
-        c.arc(dispX, dispY, 10, Math.PI * 2, Math.PI, true);
-        c.closePath();
-        c.stroke();
-        c.fill(); // stroke and fill luck bar background
-
-        // draw luck change bar background
-        c.beginPath();
-        c.arc(dispX, dispY + 5, 25, Math.PI * 2, Math.PI);
-        c.arc(dispX, dispY + 5, 10, Math.PI, Math.PI * 2, true);
-        c.closePath();
-        c.stroke();
-        c.fill(); // stroke and fill luck change bar background
-
-        // draw nectar bar
-        c.fillStyle = 'rgba(255,0,128,0.75)'; // the nectar bar color
-        c.beginPath();
-        c.arc(dispX, dispY, 50, Math.PI, Math.PI * necBar);
-        c.arc(dispX, dispY, 30, Math.PI * necBar, Math.PI, true);
-        c.closePath();
-        c.stroke();
-        c.fill();
-
-        // draw luck bar
-        c.fillStyle = 'rgba(0,192,0,0.75)'; // luck bar color, why not green?
-
-        c.beginPath();
-        c.arc(dispX, dispY, 25, Math.PI, Math.PI * luckBar);
-        c.arc(dispX, dispY, 10, Math.PI * luckBar, Math.PI, true);
-        c.closePath();
-        c.stroke();
-        c.fill();
-
-        // draw luck change bar 
+	
+	
 
 
-        c.fillStyle = 'rgba(0,255,128,0.75)'; // luck change change color
-        c.beginPath();
-        c.arc(dispX, dispY + 5, 25, Math.PI, Math.PI - Math.PI * changeTime, true);
-        c.arc(dispX, dispY + 5, 10, Math.PI - Math.PI * changeTime, Math.PI, false);
-        c.closePath();
-        c.stroke();
-        c.fill(); // stroke and fill luck change bar 
-
-        // draw score
-        if (!demo) {
-            c.strokeStyle = '#000000';
-            c.fillStyle = '#ffffff';
-            c.font = '15px courier';
-            c.textAlign = 'center';
-            var text = tb.formatNumber(fly.score);
-            c.strokeText('score: ' + text, 100, 20);
-            c.fillText('score: ' + text, 100, 20);
-        }
-    };
-
-
-    var flower = function () { // the flower constructer function
+    var Flower = function (id) { // the flower constructer function
+	    //this.id = id;
+		var i=0;
+		while(i < maxFlowers){
+		    if(!activeFlowerSheets[i]){
+			    activeFlowerSheets[i] = !0;
+				this.sheetIndex = i;
+				break;
+			}
+		    i++;
+		}
+		console.log(activeFlowerSheets);
         this.x = tb.rndInt(380) + 60; // the x position of the flower
         this.y = tb.rndInt(280) + 110; // the y position of the flower
         this.nectar = tb.rndInt(50 + luck, luck * 4.4 + 60); // the amount of nectar that the flower has
         this.flowerSize = this.nectar * 0.05; // the flower size is based on the amount of nectar
 
-        this.grown = !1; // grown boolean set to false, this is used in the drawStem rendering function
+        this.grown = !1; // grown boolean set to false, this is used in the game state
+		this.render = !0; // used in the new rendering
         this.growState = 0; // growState is also used in drawStem to determine the state of the growth animation
         this.stemColor = 'rgb(0,' + Math.round(tb.rnd(127) + 127) + ',0)'; // stem color (cosmetic)
 
@@ -189,143 +156,63 @@
         this.pettleCount = Math.round(tb.rnd(pettleRange[0], pettleRange[1])); // pettleCount is also just to help keep the flowers from being boring.
     };
 
-    /*
-         The drawStem function is used to animate, and draw the flowers.
-   */
-    var drawStem = function (drawToInstance, flowerIndex) {
-        var fl = flowers[flowerIndex];
-        con.strokeStyle = fl.stemColor;
-        con.save();
-        con.lineWidth = 5;
-        if (fl.nectar < 25) {
-            con.globalAlpha = tb.per(fl.nectar, 25) / 100;
-
-        } else {
-            con.globalAlpha = 1;
-        };
+   
 
 
 
-        con.beginPath();
-        con.moveTo(fl.x + fl.flowerSize, 500);
-        for (var i = 0; i != drawToInstance + 1; i++) {
-            var yStep = ((500 - fl.y - fl.flowerSize) / 50);
-            if (i <= 24) {
-                var d = i;
-            } else {
-                var d = (50 - i);
-            }
-
-            if (fl.x <= 250) {
-                var x = fl.x + fl.flowerSize - (d * fl.stemXRate * i);
-            } else {
-                var x = fl.x + fl.flowerSize + (d * fl.stemXRate * i);
-            };
-            var y = 500 - i * yStep;
-
-            con.lineTo(x, y);
-
-        };
-        con.stroke();
-
-
-
-        var ic = 'rgb(' + Math.round(fl.nectar) + ',' + Math.round(fl.nectar) + ',0)';
-        //var pc = tb.hue(fl.pettleHue,(tb.per(fl.nectar,500)*2.55)*1.27);
-        //var pc = 'hsl('+fl.pettleHue+','+Math.round(tb.per(fl.nectar,500)+'%,50%)';
-        var pc = '#ffffff';
-        var pc = 'hsl(' + (fl.pettleHue * 30) + ',' + Math.round(tb.per(fl.nectar, 500)) + '%,' + fl.pettleLightness + '%)';
-        if (drawToInstance == 50) {
-
-            drawFlower(fl.x + fl.flowerSize, fl.y + fl.flowerSize, fl.flowerSize * 3, fl.pettleCount, ic, pc, fl.offset, flowerSmoothness);
-        } else {
-            drawFlower(x, y, (fl.flowerSize * 3) * (drawToInstance / 50), fl.pettleCount, ic, pc, fl.offset, flowerSmoothness);
-        }
-        con.restore();
-    };
-
-    /*
-	     The draw Flower function,
-		 this function just draws a flower, it does not animate the growth of the stem and flower in its entirety, for that look at drawStem
-	*/
-    var drawFlower = function (x, y, radius, pettles, innerFlowerColor, pettleColor, offset, smoothness) {
-        if (offset == undefined) var offset = tb.rnd(0, 3.14);
-        con.beginPath();
-        con.lineWidth = 2;
-        con.moveTo(x, y);
-        //pettles = 3;
-
-        var minPoints = pettles * 2; // minPoints is the minimum amount of points that will be needed to draw the flower
-        /* 
-		     smoothness is the number of points that will be used for each half of a pettle, 
-			 the higher the smoothness the more points there will be therefore you will have smoother pettles
-             however it will cost more CPU overhead.
-			 
-			 drawing a 8 pettle flower will end up beging a minamum of 16 points, witch would just basicly give you 8 lines
-			 ratter then pettles. however a smoothness of 2 would give you  (8*2)*2 = 32 points witch would be 4 points
-			 per pettle. A smoothness of 8 would give you (8*2)*8 = 128 points 16 points per pettle, witch would give you smoother
-			 pettles at an exspence of overhead.
-			 
-			 although it can be set as low as 1, it should be as low as 2 if performance is of concern.
-			 
-			 maybe smoothness should be an augument that could be set in an options menu
-	     */
-        if (!smoothness) var smoothness = 4;
-
-        var points = minPoints * smoothness; //  number of points per flower
-        var angleRate = Math.PI * 2 / points; // the number or radians to move per point
-        var perPettle = points / pettles; // the number of points for each pettle (an 4 pettle flower with a smoothness of 2 would be (16/4=4))
-        var innerRadius = radius / 3;
-        radius = radius * 2 / perPettle; // ajust the radius? I may have to rethink this.
-        var radUp = true; // a boolean meaning if the radical value in the polar graph should go up or down
-
-
-        /* 
-		     draw the flower
-			 start off by setting the current polarAngle to the given offset, this will help make each flower look different
-		*/
-        for (var polarAngle = offset, radical = 0; polarAngle < Math.PI * 2 + offset; polarAngle += angleRate) {
-            con.lineTo(x + Math.sin(polarAngle) * radical * radius, y + Math.cos(polarAngle) * radical * radius);
-            radUp ? radical += 1 : radical -= 1;
-            if (radical >= perPettle / 2) {
-                radUp = !radUp;
-            };
-            if (radical <= 0) {
-                radUp = !radUp;
-            };
-        };
-        con.closePath();
-        con.strokeStyle = '#000000';
-        con.stroke();
-        con.fillStyle = pettleColor; //tb.hue(Math.round(tb.rnd(11)),tb.rnd(32,127.5));
-        con.fill();
-
-        con.strokeStyle = '#000000';
-        con.beginPath();
-
-        con.arc(x, y, innerRadius, 0, 6.28);
-        con.closePath();
-        con.stroke();
-        con.fillStyle = innerFlowerColor;
-        con.fill();
-    };
-
-
-
-    var cls = function () {
+	// backDop or cls function is deprecated thanks to Acetate canvas layering!
+	/*
+    var backDrop = function () {
         var bg = con.createLinearGradient(0, 500, 0, 0);
         bg.addColorStop(0, '#00ff80');
         bg.addColorStop(0.75, '#0000ff');
         con.fillStyle = bg;
         con.fillRect(0, 0, 500, 500);
     };
+	*/
 
     /* the games state machine */
     var state = {
         firstTime: true,
         start: function () {
             if (state.firstTime) {
-                conDom = tb.g('game'), // stores a reference to the canvas DOM object
+			    // YO! here is an improvement added in version 2014.03.20!
+				// set up the Acetate Class Instance! woot! woot!
+			    ace = new Acetate({
+				    container: 'app',
+					sheetCount:4,
+					width:500,height:500,scaledWidth:500,scaledHeight:500,
+					labelList:['backDrop','app', 'dispBack','disp']
+				});
+				ace.clear('dispBack');
+				ace.clear('disp');
+				
+				
+				// add sheets to place flowers on
+				for(var f=0; f!=maxFlowers;f++){
+				    ace.addSheet(); // add a new sheet that will end up at the top z level
+				    ace.zMove(ace.sheetCount-1,1); // change it's z-level to 1
+					ace.renameSheet(1, 'flower'+f); // name the sheet flowerX
+					activeFlowerSheets[f] = false;
+				}
+				
+				
+				
+				// YO! here is an improvement added in version 2014.03.20!
+				// because the backdrop never changes across all game states it only needs to be rendered once!				
+				// set up the backDrop layer only once
+				var context = ace.getContext('backDrop');
+	            var bg = context.createLinearGradient(0, 500, 0, 0);
+                bg.addColorStop(0, '#00ee80');//green
+				bg.addColorStop(0.25, '#ffff00');//yellow
+                bg.addColorStop(0.8, '#ff0000');//red
+                context.fillStyle = bg;
+                context.fillRect(0, 0, 500, 500);
+				
+				// set up the DispBack layer only once as well
+								
+                //conDom = tb.g('game'), // stores a reference to the canvas DOM object				
+				conDom = ace.get('app').dom; // use Acetate instead, but we should break things up better
                 con = conDom.getContext('2d'), // stores a reference to the canvas context object
                 con.textBaseline = 'top'; // set the context text baseline to top
                 sheet.src = 'img/fly_32_1.png';
@@ -365,6 +252,7 @@
                     state.menuFlowers = [];
                     newGame();
 					pressDelay=new Date();
+					dispBack(); // render dispBack once
                     currentState = 'game';
                 };
             };
@@ -418,7 +306,7 @@
                     var roll = tb.rnd(100); // do a roll
                     if (roll <= luck) { // if roll is in players favor...
                         var i = flowers.length;
-                        flowers[i] = new flower(i); // generate a new flower
+                        flowers[i] = new Flower(i); // generate a new flower
                     };
                 };
             };
@@ -427,7 +315,10 @@
             for (var f = 0; f != flowers.length; f++) {
                 var i = flowers[f];
                 if (i.grown) { // if the flower is fully grown
+				  
+					
                     if (tb.boundingBox(fly.x, fly.y + 30, 20, 20, i.x, i.y, i.flowerSize * 2, i.flowerSize * 2)) { // if the fly collides with the flower
+					    i.render=true;
                         if (i.nectar >= 20) {
                             fly.nectar += 20 * 0.1;
                             i.nectar -= 20;
@@ -441,10 +332,11 @@
                     } else {
                         i.nectar -= 0.25;
                         if (i.nectar < 25) {
+						     i.render=true;
                             if (i.y < 480) {
                                 i.y++;
                             };
-                        };
+                        }
                     };
                     if (i.nectar < 0) i.nectar = 0;
                 } else { // else if the flower is not grown
@@ -469,6 +361,9 @@
 
             if (killList.length > 0) {
                 for (var kill = killList.length - 1; kill != -1; kill--) {
+				    activeFlowerSheets[flowers[killList[kill]].sheetIndex] = !1;
+					ace.clear('flower'+flowers[killList[kill]].sheetIndex);
+					console.log(activeFlowerSheets);
                     flowers.splice(killList[kill], 1);
                 };
                 killList = [];
@@ -504,8 +399,16 @@
 
             // frame counter, game seems to stay at 12FPS on my Asus Intel Atom N570 EEE-PC
 
-            //out(FPS + 'FPS')
-            /*
+			/*
+			var str='';
+			for(var i=0,len=flowers.length;i<len;i++){
+			    str+=i+':'+flowers[i].render+' ,';
+			}
+			*/
+			//out(str);
+			/*
+            out(FPS + 'FPS')
+            
             FC++;
             if (new Date() - lastFrameCount >= 1000) {
                 FPS = FC;
@@ -532,20 +435,301 @@
                  };
                  newGame();
 				 pressDelay=new Date();
+				 ace.clear('dispBack'); // clear the dispBacking
+				 ace.clear('disp'); // clear the disp
                  currentState = 'menu';
             };
 
         }
     }
 
+	
+	var dispBack=function(dispX, dispY){
+	     if(!dispX || !dispY) {
+            dispX = 250,dispY = 60; // position of display
+        };
+		ace.clear('dispBack');
+		var c = ace.get('dispBack').context;
+		
+		
+		
+		c.fillStyle = 'rgba(128,128,128,0.5)'; // set background color
+        c.strokeStyle = 'rgba(0,0,0,1)'; // set bar outline color
+        c.lineWidth = 2; // thicker then normal outline width
+		//c.fillRect(0,0,500,500);
+		
+		 // draw nectar bar and luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 30, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill nectar bar background
+
+        // draw luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 10, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck bar background
+
+        // draw luck change bar background
+        c.beginPath();
+        c.arc(dispX, dispY + 5, 25, Math.PI * 2, Math.PI);
+        c.arc(dispX, dispY + 5, 10, Math.PI, Math.PI * 2, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck change bar background
+	}
+
+    var disp = function (dispX, dispY, demo) {
+        if (!demo) var demo = false;
+        if (!dispX || !dispY) {
+            var dispX = 250,
+                dispY = 60; // position of display
+        };
+        /* 
+		 dispX sets the position of the nectar, and luck indicator bars
+		 dispX and dispY are the position of the concentric circles orgin
+         so then 50,50 would place it in the upper left corner
+         250,50 would be in the upper upper center.	 
+		 */
+        if (demo) {
+		    dispBack(150, 350)
+            var necBar = 1.25,
+                luckBar = 1.75,
+                changeTime = 0.30;
+        } else {
+            var necBar = tb.per(fly.nectar, fly.maxNectar) / 100 + 1, // determin the nectar bar length
+                luckBar = luck / 100 + 1, // find luck bar length
+                now = new Date(),
+                changeTime = tb.per(now - lastLuckChange, 30000) / 100;
+        };
+
+        //var c = con; // reference to context
+		ace.clear('disp');
+		var c = ace.getContext('disp');
+
+		/*
+        c.fillStyle = 'rgba(128,128,128,0.5)'; // set background color
+        c.strokeStyle = 'rgba(0,0,0,1)'; // set bar outline color
+        c.lineWidth = 2; // thicker then normal outline width
+
+		
+        // draw nectar bar and luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 30, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill nectar bar background
+
+        // draw luck bar background
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * 2);
+        c.arc(dispX, dispY, 10, Math.PI * 2, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck bar background
+
+        // draw luck change bar background
+        c.beginPath();
+        c.arc(dispX, dispY + 5, 25, Math.PI * 2, Math.PI);
+        c.arc(dispX, dispY + 5, 10, Math.PI, Math.PI * 2, true);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck change bar background
+*/
+        // draw nectar bar
+        c.fillStyle = 'rgba(255,0,128,0.75)'; // the nectar bar color
+        c.beginPath();
+        c.arc(dispX, dispY, 50, Math.PI, Math.PI * necBar);
+        c.arc(dispX, dispY, 30, Math.PI * necBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+
+        // draw luck bar
+        c.fillStyle = 'rgba(0,192,0,0.75)'; // luck bar color, why not green?
+
+        c.beginPath();
+        c.arc(dispX, dispY, 25, Math.PI, Math.PI * luckBar);
+        c.arc(dispX, dispY, 10, Math.PI * luckBar, Math.PI, true);
+        c.closePath();
+        c.stroke();
+        c.fill();
+
+        // draw luck change bar 
+
+
+        c.fillStyle = 'rgba(0,255,128,0.75)'; // luck change change color
+        c.beginPath();
+        c.arc(dispX, dispY + 5, 25, Math.PI, Math.PI - Math.PI * changeTime, true);
+        c.arc(dispX, dispY + 5, 10, Math.PI - Math.PI * changeTime, Math.PI, false);
+        c.closePath();
+        c.stroke();
+        c.fill(); // stroke and fill luck change bar 
+
+        // draw score
+        if (!demo) {
+            c.strokeStyle = '#000000';
+            c.fillStyle = '#ffffff';
+            c.font = '15px courier';
+            c.textAlign = 'center';
+            var text = tb.formatNumber(fly.score);
+            c.strokeText('score: ' + text, 100, 20);
+            c.fillText('score: ' + text, 100, 20);
+        }
+    };
+	
+	 /*
+         The drawStem function is used to animate, and draw the flowers.
+   */
+    var drawStem = function (drawToInstance, flowerIndex) {
+        var fl = flowers[flowerIndex];
+		
+		
+		if(fl.render){
+		console.log(fl.sheetIndex);
+		//ace.clear('flower'+flowerIndex);
+		//var con = ace.getContext('flower'+flowerIndex);
+		ace.clear('flower'+fl.sheetIndex);
+		var con = ace.getContext('flower'+fl.sheetIndex);
+		
+		
+        con.strokeStyle = fl.stemColor;
+        //con.save();
+        con.lineWidth = 5;
+        if (fl.nectar < 25) {
+            con.globalAlpha = tb.per(fl.nectar, 25) / 100;
+
+        } else {
+            con.globalAlpha = 1;
+        };
+
+
+
+        con.beginPath();
+        con.moveTo(fl.x + fl.flowerSize, 500);
+        for (var i = 0; i != drawToInstance + 1; i++) {
+            var yStep = ((500 - fl.y - fl.flowerSize) / 50);
+            if (i <= 24) {
+                var d = i;
+            } else {
+                var d = (50 - i);
+            }
+
+            if (fl.x <= 250) {
+                var x = fl.x + fl.flowerSize - (d * fl.stemXRate * i);
+            } else {
+                var x = fl.x + fl.flowerSize + (d * fl.stemXRate * i);
+            };
+            var y = 500 - i * yStep;
+
+            con.lineTo(x, y);
+			
+
+        };
+        con.stroke();
+
+
+
+        var ic = 'rgb(' + Math.round(fl.nectar) + ',' + Math.round(fl.nectar) + ',0)';
+        //var pc = tb.hue(fl.pettleHue,(tb.per(fl.nectar,500)*2.55)*1.27);
+        //var pc = 'hsl('+fl.pettleHue+','+Math.round(tb.per(fl.nectar,500)+'%,50%)';
+        var pc = '#ffffff';
+        var pc = 'hsl(' + (fl.pettleHue * 30) + ',' + Math.round(tb.per(fl.nectar, 500)) + '%,' + fl.pettleLightness + '%)';
+        if (drawToInstance === 50) {
+            drawFlower(fl.x + fl.flowerSize, fl.y + fl.flowerSize, fl.flowerSize * 3, fl.pettleCount, ic, pc, fl.offset, flowerSmoothness,con);
+			
+			  fl.render=false;
+			  //throw new Error();
+        } else {
+            drawFlower(x, y, (fl.flowerSize * 3) * (drawToInstance / 50), fl.pettleCount, ic, pc, fl.offset, flowerSmoothness,con);
+        }
+        //con.restore();
+		
+		}
+    };
+
+    /*
+	     The draw Flower function,
+		 this function just draws a flower, it does not animate the growth of the stem and flower in its entirety, for that look at drawStem
+	*/
+    var drawFlower = function (x, y, radius, pettles, innerFlowerColor, pettleColor, offset, smoothness,context) {
+	    if(context === undefined) context = con;
+        if (offset == undefined) offset = tb.rnd(0, 3.14);
+        context.beginPath();
+        context.lineWidth = 2;
+        context.moveTo(x, y);
+        //pettles = 3;
+
+        var minPoints = pettles * 2; // minPoints is the minimum amount of points that will be needed to draw the flower
+        /* 
+		     smoothness is the number of points that will be used for each half of a pettle, 
+			 the higher the smoothness the more points there will be therefore you will have smoother pettles
+             however it will cost more CPU overhead.
+			 
+			 drawing a 8 pettle flower will end up beging a minamum of 16 points, witch would just basicly give you 8 lines
+			 ratter then pettles. however a smoothness of 2 would give you  (8*2)*2 = 32 points witch would be 4 points
+			 per pettle. A smoothness of 8 would give you (8*2)*8 = 128 points 16 points per pettle, witch would give you smoother
+			 pettles at an exspence of overhead.
+			 
+			 although it can be set as low as 1, it should be as low as 2 if performance is of concern.
+			 
+			 maybe smoothness should be an augument that could be set in an options menu
+	     */
+        if (!smoothness) var smoothness = 4;
+
+        var points = minPoints * smoothness; //  number of points per flower
+        var angleRate = Math.PI * 2 / points; // the number or radians to move per point
+        var perPettle = points / pettles; // the number of points for each pettle (an 4 pettle flower with a smoothness of 2 would be (16/4=4))
+        var innerRadius = radius / 3;
+        radius = radius * 2 / perPettle; // ajust the radius? I may have to rethink this.
+        var radUp = true; // a boolean meaning if the radical value in the polar graph should go up or down
+
+
+        /* 
+		     draw the flower
+			 start off by setting the current polarAngle to the given offset, this will help make each flower look different
+		*/
+        for (var polarAngle = offset, radical = 0; polarAngle < Math.PI * 2 + offset; polarAngle += angleRate) {
+            context.lineTo(x + Math.sin(polarAngle) * radical * radius, y + Math.cos(polarAngle) * radical * radius);
+            radUp ? radical += 1 : radical -= 1;
+            if (radical >= perPettle / 2) {
+                radUp = !radUp;
+            };
+            if (radical <= 0) {
+                radUp = !radUp;
+            };
+        };
+        context.closePath();
+        context.strokeStyle = '#000000';
+        context.stroke();
+        context.fillStyle = pettleColor; //tb.hue(Math.round(tb.rnd(11)),tb.rnd(32,127.5));
+        context.fill();
+
+        context.strokeStyle = '#000000';
+        context.beginPath();
+
+        context.arc(x, y, innerRadius, 0, 6.28);
+        context.closePath();
+        context.stroke();
+        context.fillStyle = innerFlowerColor;
+        context.fill();
+    };
+	
     /* for each game state there is a cosponsoring render function*/
     var render = {
         start: function () {
-            cls();
+            //backDrop();
+			ace.clear('app');
             con.fillText('I am loading...', 10, 10);
         },
         menu: function () {
-            cls();
+            //backDrop();
+			ace.clear('app');
             for (var i = 0; i != state.menuFlowers.length; i++) { // loop thru state.menuFlowers and draw all flowers
                 state.menuFlowers[i];
                 var mf = state.menuFlowers[i];
@@ -626,7 +810,8 @@
 
         },
         game: function () {
-            cls(); // clear screen
+            //backDrop(); // clear screen
+			ace.clear('app');
             for (var f = 0; f != flowers.length; f++) {
                 var i = flowers[f];
                 drawStem(i.growState, f); // draw all flowers in the flowers array
@@ -636,6 +821,12 @@
         },
         lostGame: function () {
             if (!gameOver) {
+			
+			    // clear all the flower sheets
+			    for(var f=0; f!=maxFlowers;f++){
+		            ace.clear('flower'+f);
+		        }
+			
                 con.fillStyle = 'rgba(0,0,0,0.8)';
                 con.strokeStyle = '#ffffff';
                 con.lineWidth = 4;
@@ -661,10 +852,14 @@
     };
 
 
+	/*
+	  main is called when app first starts.
+	  the first currentState is load, the apps single external source file is loaded
+	*/
     var main = function () {
         var lt = new Date();
         var thread = function () {
-            if (new Date() - lt >= 1000 / 20) {
+            if (new Date() - lt >= 1000 / 30) {
                 state[currentState]();
                 render[currentState]();
                 lt = new Date();
@@ -719,12 +914,12 @@
             var touch = e.touches[0];
 
 			// should be good if not fullscreen
-            //pointer[0] = touch.clientX - conDom.offsetLeft;
-            //pointer[1] = touch.clientY - conDom.offsetTop;
+            pointer[0] = touch.clientX - conDom.offsetLeft;
+            pointer[1] = touch.clientY - conDom.offsetTop;
 
             // should be good if scaled 100%.
-            pointer[0] = Math.round(tb.per(touch.clientX,window.innerWidth))*5,
-            pointer[1] = Math.round(tb.per(touch.clientY,window.innerHeight))*5;
+            //pointer[0] = Math.round(tb.per(touch.clientX,window.innerWidth))*5,
+            //pointer[1] = Math.round(tb.per(touch.clientY,window.innerHeight))*5;
 
             if (pointer[1] < fly.y) {
                 keys[87] = !0;
@@ -738,16 +933,23 @@
 	};
 	
     var attachEvents = function () {
+	    // ALLERT!  events are attached to the top canvas!
+		// 2014.03.20 change made a conDom local var overriding the global one, there is more then one canvas now
+	    var conDom = ace.get('disp').dom;
         conDom.addEventListener('mousemove', function (e) {
 
             //works fine if you do not scale, and position without any nested elements other then body
             //pointer[0] = e.clientX - conDom.offsetLeft;
             //pointer[1] = e.clientY - conDom.offsetTop;
 
+			// first change in months there is allot more to do if you are up for it
+			var rect = conDom.getBoundingClientRect();
+			pointer[0] = Math.round(e.clientX-rect.left);
+			pointer[1] = Math.round(e.clientY-rect.top);
 
             // if you are going to scale full screen you might want to do something like this
-             pointer[0]=Math.floor(tb.per(e.clientX,window.innerWidth)*5);
-             pointer[1]=Math.floor(tb.per(e.clientY,window.innerHeight)*5);
+             //pointer[0]=Math.floor(tb.per(e.clientX,window.innerWidth)*5);
+             //pointer[1]=Math.floor(tb.per(e.clientY,window.innerHeight)*5);
         });
         conDom.addEventListener('mousedown', function (e) {
             pressed = !0;
